@@ -14,16 +14,347 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      batch_members: {
+        Row: {
+          added_at: string
+          batch_id: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          batch_id: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          batch_id?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_members_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batches: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          batch_id: string
+          content: string | null
+          created_at: string
+          edited_at: string | null
+          id: string
+          media_type: string | null
+          media_url: string | null
+          reply_to: string | null
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          content?: string | null
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          reply_to?: string | null
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          content?: string | null
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          reply_to?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_classes: {
+        Row: {
+          batch_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          meeting_url: string
+          provider: Database["public"]["Enums"]["class_provider"]
+          scheduled_at: string
+          title: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meeting_url: string
+          provider?: Database["public"]["Enums"]["class_provider"]
+          scheduled_at: string
+          title: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meeting_url?: string
+          provider?: Database["public"]["Enums"]["class_provider"]
+          scheduled_at?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_classes_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          batch_id: string
+          created_at: string
+          description: string | null
+          file_url: string
+          id: string
+          title: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          description?: string | null
+          file_url: string
+          id?: string
+          title: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          description?: string | null
+          file_url?: string
+          id?: string
+          title?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      video_recordings: {
+        Row: {
+          batch_id: string
+          created_at: string
+          description: string | null
+          id: string
+          provider: Database["public"]["Enums"]["video_provider"]
+          title: string
+          uploaded_by: string | null
+          video_url: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          provider?: Database["public"]["Enums"]["video_provider"]
+          title: string
+          uploaded_by?: string | null
+          video_url: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          provider?: Database["public"]["Enums"]["video_provider"]
+          title?: string
+          uploaded_by?: string | null
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_recordings_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
+      is_batch_member: {
+        Args: { _batch_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "superadmin" | "admin" | "teacher" | "student"
+      class_provider: "zoom" | "meet" | "other"
+      video_provider: "youtube" | "vimeo" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +481,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["superadmin", "admin", "teacher", "student"],
+      class_provider: ["zoom", "meet", "other"],
+      video_provider: ["youtube", "vimeo", "other"],
+    },
   },
 } as const
