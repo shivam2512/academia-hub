@@ -63,9 +63,70 @@ function UsersPage() {
     load();
   };
 
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const payload = {
+      full_name: String(fd.get("full_name") || "").trim(),
+      email: String(fd.get("email") || "").trim(),
+      password: String(fd.get("password") || ""),
+      role: newRole,
+    };
+    if (payload.full_name.length < 2 || !payload.email || payload.password.length < 6) {
+      toast.error("Name, valid email, and password (6+ chars) are required");
+      return;
+    }
+    setCreating(true);
+    try {
+      await createUser({ data: payload });
+      toast.success("User created");
+      setCreateOpen(false);
+      setNewRole("student");
+      load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to create user");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="p-8">
-      <PageHeader title="Users" description="All users on the platform." />
+      <PageHeader
+        title="Users"
+        description="All users on the platform."
+        actions={isSuperadmin && (
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+                <Plus className="h-4 w-4 mr-2" />Add user
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Add a new user</DialogTitle></DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div><Label htmlFor="nu-name">Full name</Label><Input id="nu-name" name="full_name" required /></div>
+                <div><Label htmlFor="nu-email">Email</Label><Input id="nu-email" name="email" type="email" required /></div>
+                <div><Label htmlFor="nu-password">Temporary password (min 6 chars)</Label><Input id="nu-password" name="password" type="text" required minLength={6} /></div>
+                <div>
+                  <Label>Role</Label>
+                  <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="teacher">Teacher</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="superadmin">Superadmin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">Share these credentials with the user. They can change their password after signing in.</p>
+                <DialogFooter><Button type="submit" disabled={creating}>{creating ? "Creating…" : "Create user"}</Button></DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      />
       <Card className="shadow-card overflow-hidden">
         <div className="divide-y">
           {users.map(u => {
