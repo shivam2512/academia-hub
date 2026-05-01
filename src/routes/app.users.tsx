@@ -1,25 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Users, UserPlus, Lock } from "lucide-react";
+import { Users, UserPlus, Lock, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { createUser } from "@/server/users.functions";
 
 export const Route = createFileRoute("/app/users")({ component: UsersPage });
 
 function UsersPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, hasRole } = useAuth();
+  const isSuperadmin = hasRole("superadmin");
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<Record<string, string[]>>({});
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newRole, setNewRole] = useState<AppRole>("student");
   const [batches, setBatches] = useState<any[]>([]);
   const [memberships, setMemberships] = useState<Record<string, any[]>>({});
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
@@ -57,9 +63,70 @@ function UsersPage() {
     load();
   };
 
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const payload = {
+      full_name: String(fd.get("full_name") || "").trim(),
+      email: String(fd.get("email") || "").trim(),
+      password: String(fd.get("password") || ""),
+      role: newRole,
+    };
+    if (payload.full_name.length < 2 || !payload.email || payload.password.length < 6) {
+      toast.error("Name, valid email, and password (6+ chars) are required");
+      return;
+    }
+    setCreating(true);
+    try {
+      await createUser({ data: payload });
+      toast.success("User created");
+      setCreateOpen(false);
+      setNewRole("student");
+      load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to create user");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="p-8">
-      <PageHeader title="Users" description="All users on the platform." />
+      <PageHeader
+        title="Users"
+        description="All users on the platform."
+        actions={isSuperadmin && (
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+                <Plus className="h-4 w-4 mr-2" />Add user
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Add a new user</DialogTitle></DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div><Label htmlFor="nu-name">Full name</Label><Input id="nu-name" name="full_name" required /></div>
+                <div><Label htmlFor="nu-email">Email</Label><Input id="nu-email" name="email" type="email" required /></div>
+                <div><Label htmlFor="nu-password">Temporary password (min 6 chars)</Label><Input id="nu-password" name="password" type="text" required minLength={6} /></div>
+                <div>
+                  <Label>Role</Label>
+                  <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="teacher">Teacher</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="superadmin">Superadmin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">Share these credentials with the user. They can change their password after signing in.</p>
+                <DialogFooter><Button type="submit" disabled={creating}>{creating ? "Creating…" : "Create user"}</Button></DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      />
       <Card className="shadow-card overflow-hidden">
         <div className="divide-y">
           {users.map(u => {
