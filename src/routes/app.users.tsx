@@ -1,25 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Users, UserPlus, Lock } from "lucide-react";
+import { Users, UserPlus, Lock, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { createUser } from "@/server/users.functions";
 
 export const Route = createFileRoute("/app/users")({ component: UsersPage });
 
 function UsersPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, hasRole } = useAuth();
+  const isSuperadmin = hasRole("superadmin");
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<Record<string, string[]>>({});
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newRole, setNewRole] = useState<AppRole>("student");
   const [batches, setBatches] = useState<any[]>([]);
   const [memberships, setMemberships] = useState<Record<string, any[]>>({});
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
