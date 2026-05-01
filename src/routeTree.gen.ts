@@ -9,38 +9,198 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppUsersRouteImport } from './routes/app.users'
+import { Route as AppRolesRouteImport } from './routes/app.roles'
+import { Route as AppBatchesIndexRouteImport } from './routes/app.batches.index'
+import { Route as AppBatchesBatchIdRouteImport } from './routes/app.batches.$batchId'
+import { Route as AppBatchesBatchIdIndexRouteImport } from './routes/app.batches.$batchId.index'
+import { Route as AppBatchesBatchIdVideosRouteImport } from './routes/app.batches.$batchId.videos'
+import { Route as AppBatchesBatchIdNotesRouteImport } from './routes/app.batches.$batchId.notes'
+import { Route as AppBatchesBatchIdLiveRouteImport } from './routes/app.batches.$batchId.live'
+import { Route as AppBatchesBatchIdChatRouteImport } from './routes/app.batches.$batchId.chat'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRolesRoute = AppRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBatchesIndexRoute = AppBatchesIndexRouteImport.update({
+  id: '/batches/',
+  path: '/batches/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBatchesBatchIdRoute = AppBatchesBatchIdRouteImport.update({
+  id: '/batches/$batchId',
+  path: '/batches/$batchId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBatchesBatchIdIndexRoute = AppBatchesBatchIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppBatchesBatchIdRoute,
+} as any)
+const AppBatchesBatchIdVideosRoute = AppBatchesBatchIdVideosRouteImport.update({
+  id: '/videos',
+  path: '/videos',
+  getParentRoute: () => AppBatchesBatchIdRoute,
+} as any)
+const AppBatchesBatchIdNotesRoute = AppBatchesBatchIdNotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => AppBatchesBatchIdRoute,
+} as any)
+const AppBatchesBatchIdLiveRoute = AppBatchesBatchIdLiveRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => AppBatchesBatchIdRoute,
+} as any)
+const AppBatchesBatchIdChatRoute = AppBatchesBatchIdChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AppBatchesBatchIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/app/roles': typeof AppRolesRoute
+  '/app/users': typeof AppUsersRoute
+  '/app/': typeof AppIndexRoute
+  '/app/batches/$batchId': typeof AppBatchesBatchIdRouteWithChildren
+  '/app/batches/': typeof AppBatchesIndexRoute
+  '/app/batches/$batchId/chat': typeof AppBatchesBatchIdChatRoute
+  '/app/batches/$batchId/live': typeof AppBatchesBatchIdLiveRoute
+  '/app/batches/$batchId/notes': typeof AppBatchesBatchIdNotesRoute
+  '/app/batches/$batchId/videos': typeof AppBatchesBatchIdVideosRoute
+  '/app/batches/$batchId/': typeof AppBatchesBatchIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/app/roles': typeof AppRolesRoute
+  '/app/users': typeof AppUsersRoute
+  '/app': typeof AppIndexRoute
+  '/app/batches': typeof AppBatchesIndexRoute
+  '/app/batches/$batchId/chat': typeof AppBatchesBatchIdChatRoute
+  '/app/batches/$batchId/live': typeof AppBatchesBatchIdLiveRoute
+  '/app/batches/$batchId/notes': typeof AppBatchesBatchIdNotesRoute
+  '/app/batches/$batchId/videos': typeof AppBatchesBatchIdVideosRoute
+  '/app/batches/$batchId': typeof AppBatchesBatchIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/app/roles': typeof AppRolesRoute
+  '/app/users': typeof AppUsersRoute
+  '/app/': typeof AppIndexRoute
+  '/app/batches/$batchId': typeof AppBatchesBatchIdRouteWithChildren
+  '/app/batches/': typeof AppBatchesIndexRoute
+  '/app/batches/$batchId/chat': typeof AppBatchesBatchIdChatRoute
+  '/app/batches/$batchId/live': typeof AppBatchesBatchIdLiveRoute
+  '/app/batches/$batchId/notes': typeof AppBatchesBatchIdNotesRoute
+  '/app/batches/$batchId/videos': typeof AppBatchesBatchIdVideosRoute
+  '/app/batches/$batchId/': typeof AppBatchesBatchIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/roles'
+    | '/app/users'
+    | '/app/'
+    | '/app/batches/$batchId'
+    | '/app/batches/'
+    | '/app/batches/$batchId/chat'
+    | '/app/batches/$batchId/live'
+    | '/app/batches/$batchId/notes'
+    | '/app/batches/$batchId/videos'
+    | '/app/batches/$batchId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/app/roles'
+    | '/app/users'
+    | '/app'
+    | '/app/batches'
+    | '/app/batches/$batchId/chat'
+    | '/app/batches/$batchId/live'
+    | '/app/batches/$batchId/notes'
+    | '/app/batches/$batchId/videos'
+    | '/app/batches/$batchId'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/roles'
+    | '/app/users'
+    | '/app/'
+    | '/app/batches/$batchId'
+    | '/app/batches/'
+    | '/app/batches/$batchId/chat'
+    | '/app/batches/$batchId/live'
+    | '/app/batches/$batchId/notes'
+    | '/app/batches/$batchId/videos'
+    | '/app/batches/$batchId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,21 +208,121 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/users': {
+      id: '/app/users'
+      path: '/users'
+      fullPath: '/app/users'
+      preLoaderRoute: typeof AppUsersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/roles': {
+      id: '/app/roles'
+      path: '/roles'
+      fullPath: '/app/roles'
+      preLoaderRoute: typeof AppRolesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/batches/': {
+      id: '/app/batches/'
+      path: '/batches'
+      fullPath: '/app/batches/'
+      preLoaderRoute: typeof AppBatchesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/batches/$batchId': {
+      id: '/app/batches/$batchId'
+      path: '/batches/$batchId'
+      fullPath: '/app/batches/$batchId'
+      preLoaderRoute: typeof AppBatchesBatchIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/batches/$batchId/': {
+      id: '/app/batches/$batchId/'
+      path: '/'
+      fullPath: '/app/batches/$batchId/'
+      preLoaderRoute: typeof AppBatchesBatchIdIndexRouteImport
+      parentRoute: typeof AppBatchesBatchIdRoute
+    }
+    '/app/batches/$batchId/videos': {
+      id: '/app/batches/$batchId/videos'
+      path: '/videos'
+      fullPath: '/app/batches/$batchId/videos'
+      preLoaderRoute: typeof AppBatchesBatchIdVideosRouteImport
+      parentRoute: typeof AppBatchesBatchIdRoute
+    }
+    '/app/batches/$batchId/notes': {
+      id: '/app/batches/$batchId/notes'
+      path: '/notes'
+      fullPath: '/app/batches/$batchId/notes'
+      preLoaderRoute: typeof AppBatchesBatchIdNotesRouteImport
+      parentRoute: typeof AppBatchesBatchIdRoute
+    }
+    '/app/batches/$batchId/live': {
+      id: '/app/batches/$batchId/live'
+      path: '/live'
+      fullPath: '/app/batches/$batchId/live'
+      preLoaderRoute: typeof AppBatchesBatchIdLiveRouteImport
+      parentRoute: typeof AppBatchesBatchIdRoute
+    }
+    '/app/batches/$batchId/chat': {
+      id: '/app/batches/$batchId/chat'
+      path: '/chat'
+      fullPath: '/app/batches/$batchId/chat'
+      preLoaderRoute: typeof AppBatchesBatchIdChatRouteImport
+      parentRoute: typeof AppBatchesBatchIdRoute
+    }
   }
 }
 
+interface AppBatchesBatchIdRouteChildren {
+  AppBatchesBatchIdChatRoute: typeof AppBatchesBatchIdChatRoute
+  AppBatchesBatchIdLiveRoute: typeof AppBatchesBatchIdLiveRoute
+  AppBatchesBatchIdNotesRoute: typeof AppBatchesBatchIdNotesRoute
+  AppBatchesBatchIdVideosRoute: typeof AppBatchesBatchIdVideosRoute
+  AppBatchesBatchIdIndexRoute: typeof AppBatchesBatchIdIndexRoute
+}
+
+const AppBatchesBatchIdRouteChildren: AppBatchesBatchIdRouteChildren = {
+  AppBatchesBatchIdChatRoute: AppBatchesBatchIdChatRoute,
+  AppBatchesBatchIdLiveRoute: AppBatchesBatchIdLiveRoute,
+  AppBatchesBatchIdNotesRoute: AppBatchesBatchIdNotesRoute,
+  AppBatchesBatchIdVideosRoute: AppBatchesBatchIdVideosRoute,
+  AppBatchesBatchIdIndexRoute: AppBatchesBatchIdIndexRoute,
+}
+
+const AppBatchesBatchIdRouteWithChildren =
+  AppBatchesBatchIdRoute._addFileChildren(AppBatchesBatchIdRouteChildren)
+
+interface AppRouteChildren {
+  AppRolesRoute: typeof AppRolesRoute
+  AppUsersRoute: typeof AppUsersRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppBatchesBatchIdRoute: typeof AppBatchesBatchIdRouteWithChildren
+  AppBatchesIndexRoute: typeof AppBatchesIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppRolesRoute: AppRolesRoute,
+  AppUsersRoute: AppUsersRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppBatchesBatchIdRoute: AppBatchesBatchIdRouteWithChildren,
+  AppBatchesIndexRoute: AppBatchesIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

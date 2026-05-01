@@ -1,0 +1,125 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { PageHeader } from "@/components/PageHeader";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Users, UserPlus, Lock } from "lucide-react";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/app/users")({ component: UsersPage });
+
+function UsersPage() {
+  const { isAdmin } = useAuth();
+  const [users, setUsers] = useState<any[]>([]);
+  const [roles, setRoles] = useState<Record<string, string[]>>({});
+  const [batches, setBatches] = useState<any[]>([]);
+  const [memberships, setMemberships] = useState<Record<string, any[]>>({});
+  const [assignOpen, setAssignOpen] = useState<string | null>(null);
+
+  const load = async () => {
+    const [u, r, b, m] = await Promise.all([
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("user_id, role"),
+      supabase.from("batches").select("id, name"),
+      supabase.from("batch_members").select("user_id, batch_id, role, batches(name)"),
+    ]);
+    setUsers(u.data ?? []);
+    const rmap: Record<string, string[]> = {};
+    (r.data ?? []).forEach(x => { (rmap[x.user_id] ||= []).push(x.role); });
+    setRoles(rmap);
+    setBatches(b.data ?? []);
+    const mmap: Record<string, any[]> = {};
+    (m.data ?? []).forEach((x: any) => { (mmap[x.user_id] ||= []).push(x); });
+    setMemberships(mmap);
+  };
+  useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
+
+  if (!isAdmin) return (
+    <div className="p-8"><Card className="p-12 text-center shadow-card"><Lock className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" /><p>Admins only.</p></Card></div>
+  );
+
+  const assignToBatch = async (userId: string, batchId: string, role: "teacher"|"student", checked: boolean) => {
+    if (checked) {
+      const { error } = await supabase.from("batch_members").insert({ user_id: userId, batch_id: batchId, role });
+      if (error) toast.error(error.message); else toast.success("Added");
+    } else {
+      const { error } = await supabase.from("batch_members").delete().eq("user_id", userId).eq("batch_id", batchId);
+      if (error) toast.error(error.message); else toast.success("Removed");
+    }
+    load();
+  };
+
+  return (
+    <div className="p-8">
+      <PageHeader title="Users" description="All users on the platform." />
+      <Card className="shadow-card overflow-hidden">
+        <div className="divide-y">
+          {users.map(u => {
+            const userRoles = roles[u.id] || [];
+            const userMemberships = memberships[u.id] || [];
+            const isOpen = assignOpen === u.id;
+            return (
+              <div key={u.id} className="p-4 flex items-center gap-4">
+                <Avatar><AvatarFallback className="bg-gradient-primary text-primary-foreground">{(u.full_name || u.email || "U").slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{u.full_name || "—"}</div>
+                  <div className="text-sm text-muted-foreground truncate">{u.email}</div>
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    {userRoles.map(r => <Badge key={r} variant="secondary" className="capitalize text-xs">{r}</Badge>)}
+                    {userMemberships.map((m: any) => <Badge key={m.batch_id} variant="outline" className="text-xs">{m.batches?.name} · {m.role}</Badge>)}
+                  </div>
+                </div>
+                <Dialog open={isOpen} onOpenChange={(o) => setAssignOpen(o ? u.id : null)}>
+                  <DialogTrigger asChild><Button variant="outline" size="sm"><UserPlus className="h-4 w-4 mr-2" />Batches</Button></DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Assign {u.full_name || u.email} to batches</DialogTitle></DialogHeader>
+                    <div className="space-y-3 max-h-96 overflow-auto">
+                      {batches.length === 0 && <p className="text-sm text-muted-foreground">No batches yet.</p>}
+                      {batches.map(b => {
+                        const m = userMemberships.find((x: any) => x.batch_id === b.id);
+                        return (
+                          <div key={b.id} className="flex items-center justify-between p-3 rounded-lg border">
+                            <div className="font-medium">{b.name}</div>
+                            <div className="flex items-center gap-3">
+                              <Select
+                                value={m?.role ?? "student"}
+                                onValueChange={async (newRole: any) => {
+                                  if (m) {
+                                    await supabase.from("batch_members").update({ role: newRole }).eq("user_id", u.id).eq("batch_id", b.id);
+                                    load();
+                                  }
+                                }}
+                                disabled={!m}
+                              >
+                                <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="student">Student</SelectItem>
+                                  <SelectItem value="teacher">Teacher</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Checkbox checked={!!m} onCheckedChange={(c) => assignToBatch(u.id, b.id, (m?.role as any) ?? "student", !!c)} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <DialogFooter><Button onClick={() => setAssignOpen(null)}>Done</Button></DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            );
+          })}
+          {users.length === 0 && <div className="p-8 text-center text-muted-foreground"><Users className="h-10 w-10 mx-auto mb-2 opacity-40" />No users yet.</div>}
+        </div>
+      </Card>
+    </div>
+  );
+}
