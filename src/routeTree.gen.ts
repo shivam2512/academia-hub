@@ -12,6 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppBatchesIndexRouteImport } from './routes/app.batches.index'
+import { Route as AppBatchesBatchIdRouteImport } from './routes/app.batches.$batchId'
+import { Route as AppBatchesBatchIdIndexRouteImport } from './routes/app.batches.$batchId.index'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -28,34 +32,79 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBatchesIndexRoute = AppBatchesIndexRouteImport.update({
+  id: '/batches/',
+  path: '/batches/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBatchesBatchIdRoute = AppBatchesBatchIdRouteImport.update({
+  id: '/batches/$batchId',
+  path: '/batches/$batchId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBatchesBatchIdIndexRoute = AppBatchesBatchIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppBatchesBatchIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/': typeof AppIndexRoute
+  '/app/batches/$batchId': typeof AppBatchesBatchIdRouteWithChildren
+  '/app/batches/': typeof AppBatchesIndexRoute
+  '/app/batches/$batchId/': typeof AppBatchesBatchIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
   '/auth': typeof AuthRoute
+  '/app': typeof AppIndexRoute
+  '/app/batches': typeof AppBatchesIndexRoute
+  '/app/batches/$batchId': typeof AppBatchesBatchIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/': typeof AppIndexRoute
+  '/app/batches/$batchId': typeof AppBatchesBatchIdRouteWithChildren
+  '/app/batches/': typeof AppBatchesIndexRoute
+  '/app/batches/$batchId/': typeof AppBatchesBatchIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/auth'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/'
+    | '/app/batches/$batchId'
+    | '/app/batches/'
+    | '/app/batches/$batchId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/auth'
-  id: '__root__' | '/' | '/app' | '/auth'
+  to: '/' | '/auth' | '/app' | '/app/batches' | '/app/batches/$batchId'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/'
+    | '/app/batches/$batchId'
+    | '/app/batches/'
+    | '/app/batches/$batchId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
 }
 
@@ -82,12 +131,65 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/batches/': {
+      id: '/app/batches/'
+      path: '/batches'
+      fullPath: '/app/batches/'
+      preLoaderRoute: typeof AppBatchesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/batches/$batchId': {
+      id: '/app/batches/$batchId'
+      path: '/batches/$batchId'
+      fullPath: '/app/batches/$batchId'
+      preLoaderRoute: typeof AppBatchesBatchIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/batches/$batchId/': {
+      id: '/app/batches/$batchId/'
+      path: '/'
+      fullPath: '/app/batches/$batchId/'
+      preLoaderRoute: typeof AppBatchesBatchIdIndexRouteImport
+      parentRoute: typeof AppBatchesBatchIdRoute
+    }
   }
 }
 
+interface AppBatchesBatchIdRouteChildren {
+  AppBatchesBatchIdIndexRoute: typeof AppBatchesBatchIdIndexRoute
+}
+
+const AppBatchesBatchIdRouteChildren: AppBatchesBatchIdRouteChildren = {
+  AppBatchesBatchIdIndexRoute: AppBatchesBatchIdIndexRoute,
+}
+
+const AppBatchesBatchIdRouteWithChildren =
+  AppBatchesBatchIdRoute._addFileChildren(AppBatchesBatchIdRouteChildren)
+
+interface AppRouteChildren {
+  AppIndexRoute: typeof AppIndexRoute
+  AppBatchesBatchIdRoute: typeof AppBatchesBatchIdRouteWithChildren
+  AppBatchesIndexRoute: typeof AppBatchesIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppIndexRoute: AppIndexRoute,
+  AppBatchesBatchIdRoute: AppBatchesBatchIdRouteWithChildren,
+  AppBatchesIndexRoute: AppBatchesIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
