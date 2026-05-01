@@ -48,34 +48,18 @@ function AuthPage() {
         </Link>
 
         <Card className="p-8 shadow-elegant">
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="signin">Sign in</TabsTrigger>
-              <TabsTrigger value="signup">Create account</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div><Label htmlFor="si-email">Email</Label><Input id="si-email" name="email" type="email" required /></div>
-                <div><Label htmlFor="si-password">Password</Label><Input id="si-password" name="password" type="password" required /></div>
-                <Button type="submit" disabled={busy} className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90">
-                  {busy ? "Signing in…" : "Sign in"}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div><Label htmlFor="su-name">Full name</Label><Input id="su-name" name="full_name" required /></div>
-                <div><Label htmlFor="su-email">Email</Label><Input id="su-email" name="email" type="email" required /></div>
-                <div><Label htmlFor="su-password">Password (min 6 chars)</Label><Input id="su-password" name="password" type="password" required minLength={6} /></div>
-                <Button type="submit" disabled={busy} className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90">
-                  {busy ? "Creating…" : "Create account"}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">First user becomes the superadmin automatically.</p>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <h1 className="text-xl font-semibold mb-1">Sign in</h1>
+          <p className="text-sm text-muted-foreground mb-6">Use the credentials provided by your administrator.</p>
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div><Label htmlFor="si-email">Email</Label><Input id="si-email" name="email" type="email" required /></div>
+            <div><Label htmlFor="si-password">Password</Label><Input id="si-password" name="password" type="password" required /></div>
+            <Button type="submit" disabled={busy} className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90">
+              {busy ? "Signing in…" : "Sign in"}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center pt-2">
+              Self-registration is disabled. Contact your superadmin for access.
+            </p>
+          </form>
         </Card>
       </div>
     </div>
