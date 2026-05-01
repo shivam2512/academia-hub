@@ -16,6 +16,9 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppBatchesIndexRouteImport } from './routes/app.batches.index'
 import { Route as AppBatchesBatchIdRouteImport } from './routes/app.batches.$batchId'
 import { Route as AppBatchesBatchIdIndexRouteImport } from './routes/app.batches.$batchId.index'
+import { Route as AppBatchesBatchIdVideosRouteImport } from './routes/app.batches.$batchId.videos'
+import { Route as AppBatchesBatchIdNotesRouteImport } from './routes/app.batches.$batchId.notes'
+import { Route as AppBatchesBatchIdLiveRouteImport } from './routes/app.batches.$batchId.live'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -52,6 +55,21 @@ const AppBatchesBatchIdIndexRoute = AppBatchesBatchIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppBatchesBatchIdRoute,
 } as any)
+const AppBatchesBatchIdVideosRoute = AppBatchesBatchIdVideosRouteImport.update({
+  id: '/videos',
+  path: '/videos',
+  getParentRoute: () => AppBatchesBatchIdRoute,
+} as any)
+const AppBatchesBatchIdNotesRoute = AppBatchesBatchIdNotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => AppBatchesBatchIdRoute,
+} as any)
+const AppBatchesBatchIdLiveRoute = AppBatchesBatchIdLiveRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => AppBatchesBatchIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,6 +78,9 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/batches/$batchId': typeof AppBatchesBatchIdRouteWithChildren
   '/app/batches/': typeof AppBatchesIndexRoute
+  '/app/batches/$batchId/live': typeof AppBatchesBatchIdLiveRoute
+  '/app/batches/$batchId/notes': typeof AppBatchesBatchIdNotesRoute
+  '/app/batches/$batchId/videos': typeof AppBatchesBatchIdVideosRoute
   '/app/batches/$batchId/': typeof AppBatchesBatchIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -67,6 +88,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/app': typeof AppIndexRoute
   '/app/batches': typeof AppBatchesIndexRoute
+  '/app/batches/$batchId/live': typeof AppBatchesBatchIdLiveRoute
+  '/app/batches/$batchId/notes': typeof AppBatchesBatchIdNotesRoute
+  '/app/batches/$batchId/videos': typeof AppBatchesBatchIdVideosRoute
   '/app/batches/$batchId': typeof AppBatchesBatchIdIndexRoute
 }
 export interface FileRoutesById {
@@ -77,6 +101,9 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/batches/$batchId': typeof AppBatchesBatchIdRouteWithChildren
   '/app/batches/': typeof AppBatchesIndexRoute
+  '/app/batches/$batchId/live': typeof AppBatchesBatchIdLiveRoute
+  '/app/batches/$batchId/notes': typeof AppBatchesBatchIdNotesRoute
+  '/app/batches/$batchId/videos': typeof AppBatchesBatchIdVideosRoute
   '/app/batches/$batchId/': typeof AppBatchesBatchIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -88,9 +115,20 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/batches/$batchId'
     | '/app/batches/'
+    | '/app/batches/$batchId/live'
+    | '/app/batches/$batchId/notes'
+    | '/app/batches/$batchId/videos'
     | '/app/batches/$batchId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/app' | '/app/batches' | '/app/batches/$batchId'
+  to:
+    | '/'
+    | '/auth'
+    | '/app'
+    | '/app/batches'
+    | '/app/batches/$batchId/live'
+    | '/app/batches/$batchId/notes'
+    | '/app/batches/$batchId/videos'
+    | '/app/batches/$batchId'
   id:
     | '__root__'
     | '/'
@@ -99,6 +137,9 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/batches/$batchId'
     | '/app/batches/'
+    | '/app/batches/$batchId/live'
+    | '/app/batches/$batchId/notes'
+    | '/app/batches/$batchId/videos'
     | '/app/batches/$batchId/'
   fileRoutesById: FileRoutesById
 }
@@ -159,14 +200,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBatchesBatchIdIndexRouteImport
       parentRoute: typeof AppBatchesBatchIdRoute
     }
+    '/app/batches/$batchId/videos': {
+      id: '/app/batches/$batchId/videos'
+      path: '/videos'
+      fullPath: '/app/batches/$batchId/videos'
+      preLoaderRoute: typeof AppBatchesBatchIdVideosRouteImport
+      parentRoute: typeof AppBatchesBatchIdRoute
+    }
+    '/app/batches/$batchId/notes': {
+      id: '/app/batches/$batchId/notes'
+      path: '/notes'
+      fullPath: '/app/batches/$batchId/notes'
+      preLoaderRoute: typeof AppBatchesBatchIdNotesRouteImport
+      parentRoute: typeof AppBatchesBatchIdRoute
+    }
+    '/app/batches/$batchId/live': {
+      id: '/app/batches/$batchId/live'
+      path: '/live'
+      fullPath: '/app/batches/$batchId/live'
+      preLoaderRoute: typeof AppBatchesBatchIdLiveRouteImport
+      parentRoute: typeof AppBatchesBatchIdRoute
+    }
   }
 }
 
 interface AppBatchesBatchIdRouteChildren {
+  AppBatchesBatchIdLiveRoute: typeof AppBatchesBatchIdLiveRoute
+  AppBatchesBatchIdNotesRoute: typeof AppBatchesBatchIdNotesRoute
+  AppBatchesBatchIdVideosRoute: typeof AppBatchesBatchIdVideosRoute
   AppBatchesBatchIdIndexRoute: typeof AppBatchesBatchIdIndexRoute
 }
 
 const AppBatchesBatchIdRouteChildren: AppBatchesBatchIdRouteChildren = {
+  AppBatchesBatchIdLiveRoute: AppBatchesBatchIdLiveRoute,
+  AppBatchesBatchIdNotesRoute: AppBatchesBatchIdNotesRoute,
+  AppBatchesBatchIdVideosRoute: AppBatchesBatchIdVideosRoute,
   AppBatchesBatchIdIndexRoute: AppBatchesBatchIdIndexRoute,
 }
 
