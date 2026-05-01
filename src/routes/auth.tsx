@@ -5,19 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
-
-const signUpSchema = z.object({
-  full_name: z.string().trim().min(2).max(100),
-  email: z.string().trim().email().max(255),
-  password: z.string().min(6).max(100),
-});
 
 const signInSchema = z.object({
   email: z.string().trim().email().max(255),
@@ -30,28 +23,6 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (!loading && user) navigate({ to: "/app" }); }, [user, loading, navigate]);
-
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const parsed = signUpSchema.safeParse({
-      full_name: fd.get("full_name"), email: fd.get("email"), password: fd.get("password"),
-    });
-    if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/app`,
-        data: { full_name: parsed.data.full_name },
-      },
-    });
-    setBusy(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Account created! You're signed in.");
-    navigate({ to: "/app" });
-  };
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
