@@ -78,7 +78,12 @@ function UsersPage() {
     }
     setCreating(true);
     try {
-      await createUser({ data: payload });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not signed in");
+      await createUser({
+        data: payload,
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
       toast.success("User created");
       setCreateOpen(false);
       setNewRole("student");
