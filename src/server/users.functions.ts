@@ -36,6 +36,17 @@ export const createUser = createServerFn({ method: "POST" })
 
     const newUserId = created.user.id;
 
+    // Belt-and-suspenders: ensure the email is confirmed so the user can sign in immediately
+    if (!created.user.email_confirmed_at) {
+      await supabaseAdmin.auth.admin.updateUserById(newUserId, { email_confirm: true });
+    }
+
+    // Ensure a profile row exists (in case the handle_new_user trigger didn't run)
+    await supabaseAdmin.from("profiles").upsert(
+      { id: newUserId, email: data.email, full_name: data.full_name },
+      { onConflict: "id" }
+    );
+
     // handle_new_user trigger inserts a default 'student' role. Replace if needed.
     if (data.role !== "student") {
       await supabaseAdmin.from("user_roles").delete().eq("user_id", newUserId);
