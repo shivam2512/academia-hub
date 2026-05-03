@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Users, UserPlus, Lock, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { createUser } from "@/server/users.functions";
+import { createUser } from "@/actions/users";
 
 export const Route = createFileRoute("/app/users")({ component: UsersPage });
 

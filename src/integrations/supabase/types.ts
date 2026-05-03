@@ -292,11 +292,44 @@ export type Database = {
         }
         Relationships: []
       }
+      video_folders: {
+        Row: {
+          batch_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_folders_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_recordings: {
         Row: {
           batch_id: string
           created_at: string
           description: string | null
+          folder_id: string | null
           id: string
           provider: Database["public"]["Enums"]["video_provider"]
           title: string
@@ -307,6 +340,7 @@ export type Database = {
           batch_id: string
           created_at?: string
           description?: string | null
+          folder_id?: string | null
           id?: string
           provider?: Database["public"]["Enums"]["video_provider"]
           title: string
@@ -317,6 +351,7 @@ export type Database = {
           batch_id?: string
           created_at?: string
           description?: string | null
+          folder_id?: string | null
           id?: string
           provider?: Database["public"]["Enums"]["video_provider"]
           title?: string
@@ -329,6 +364,13 @@ export type Database = {
             columns: ["batch_id"]
             isOneToOne: false
             referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_recordings_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "video_folders"
             referencedColumns: ["id"]
           },
         ]
