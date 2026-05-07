@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { registerSession, cleanupSessionGuard } from "@/lib/session-guard";
 
 export type AppRole = "superadmin" | "admin" | "teacher" | "student";
 
@@ -34,25 +35,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => { fetchRoles(s.user.id); }, 0);
+        setTimeout(() => { 
+          fetchRoles(s.user.id); 
+          registerSession(s.user.id, () => supabase.auth.signOut());
+        }, 0);
       } else {
         setRoles([]);
+        cleanupSessionGuard();
       }
     });
 
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) fetchRoles(s.user.id).finally(() => setLoading(false));
-      else setLoading(false);
+      if (s?.user) {
+        fetchRoles(s.user.id).finally(() => {
+          setLoading(false);
+          registerSession(s.user.id, () => supabase.auth.signOut());
+        });
+      } else {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      cleanupSessionGuard();
+    };
   }, []);
 
   const value: AuthCtx = {
     user, session, roles, loading,
-    signOut: async () => { await supabase.auth.signOut(); },
+    signOut: async () => { 
+      cleanupSessionGuard();
+      await supabase.auth.signOut(); 
+    },
     refreshRoles: async () => { if (user) await fetchRoles(user.id); },
     hasRole: (r) => roles.includes(r),
     hasAnyRole: (rs) => rs.some((r) => roles.includes(r)),
