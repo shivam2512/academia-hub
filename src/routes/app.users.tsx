@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import { Users, UserPlus, Lock, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createUser } from "@/actions/users";
-import { WelcomeKit } from "@/components/WelcomeKit";
 
 export const Route = createFileRoute("/app/users")({ component: UsersPage });
 
@@ -30,7 +29,6 @@ function UsersPage() {
   const [batches, setBatches] = useState<any[]>([]);
   const [memberships, setMemberships] = useState<Record<string, any[]>>({});
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
-  const [createdUser, setCreatedUser] = useState<{ fullName: string, email: string, password?: string } | null>(null);
 
   const load = async () => {
     const [u, r, b, m] = await Promise.all([
@@ -86,13 +84,8 @@ function UsersPage() {
         data: payload,
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      setCreatedUser({
-        fullName: payload.full_name,
-        email: payload.email,
-        password: payload.password
-      });
       toast.success("User created");
-      // Don't close dialog yet, we show the welcome kit
+      setCreateOpen(false);
       setNewRole("student");
       load();
     } catch (err: any) {
@@ -108,51 +101,33 @@ function UsersPage() {
         title="Users"
         description="All users on the platform."
         actions={isSuperadmin && (
-          <Dialog open={createOpen} onOpenChange={(o) => {
-            setCreateOpen(o);
-            if (!o) setCreatedUser(null);
-          }}>
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90">
                 <Plus className="h-4 w-4 mr-2" />Add user
               </Button>
             </DialogTrigger>
-            <DialogContent className={createdUser ? "max-w-md" : ""}>
-              <DialogHeader>
-                <DialogTitle>{createdUser ? "Success! Share these details" : "Add a new user"}</DialogTitle>
-              </DialogHeader>
-              
-              {createdUser ? (
-                <WelcomeKit 
-                  fullName={createdUser.fullName}
-                  email={createdUser.email}
-                  password={createdUser.password}
-                  onClose={() => {
-                    setCreateOpen(false);
-                    setCreatedUser(null);
-                  }}
-                />
-              ) : (
-                <form onSubmit={handleCreate} className="space-y-4">
-                  <div><Label htmlFor="nu-name">Full name</Label><Input id="nu-name" name="full_name" required /></div>
-                  <div><Label htmlFor="nu-email">Email</Label><Input id="nu-email" name="email" type="email" required /></div>
-                  <div><Label htmlFor="nu-password">Temporary password (min 6 chars)</Label><Input id="nu-password" name="password" type="text" required minLength={6} /></div>
-                  <div>
-                    <Label>Role</Label>
-                    <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="teacher">Teacher</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="superadmin">Superadmin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Share these credentials with the user. They can change their password after signing in.</p>
-                  <DialogFooter><Button type="submit" disabled={creating}>{creating ? "Creating…" : "Create user"}</Button></DialogFooter>
-                </form>
-              )}
+            <DialogContent>
+              <DialogHeader><DialogTitle>Add a new user</DialogTitle></DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div><Label htmlFor="nu-name">Full name</Label><Input id="nu-name" name="full_name" required /></div>
+                <div><Label htmlFor="nu-email">Email</Label><Input id="nu-email" name="email" type="email" required /></div>
+                <div><Label htmlFor="nu-password">Temporary password (min 6 chars)</Label><Input id="nu-password" name="password" type="text" required minLength={6} /></div>
+                <div>
+                  <Label>Role</Label>
+                  <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="teacher">Teacher</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="superadmin">Superadmin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">Share these credentials with the user. They can change their password after signing in.</p>
+                <DialogFooter><Button type="submit" disabled={creating}>{creating ? "Creating…" : "Create user"}</Button></DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         )}
@@ -174,61 +149,43 @@ function UsersPage() {
                     {userMemberships.map((m: any) => <Badge key={m.batch_id} variant="outline" className="text-xs">{m.batches?.name} · {m.role}</Badge>)}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Copy className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader><DialogTitle>Share Credentials</DialogTitle></DialogHeader>
-                      <WelcomeKit 
-                        fullName={u.full_name || u.email} 
-                        email={u.email} 
-                        onClose={() => {}} 
-                      />
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog open={isOpen} onOpenChange={(o) => setAssignOpen(o ? u.id : null)}>
-                    <DialogTrigger asChild><Button variant="outline" size="sm"><UserPlus className="h-4 w-4 mr-2" />Batches</Button></DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>Assign {u.full_name || u.email} to batches</DialogTitle></DialogHeader>
-                      <div className="space-y-3 max-h-96 overflow-auto">
-                        {batches.length === 0 && <p className="text-sm text-muted-foreground">No batches yet.</p>}
-                        {batches.map(b => {
-                          const m = userMemberships.find((x: any) => x.batch_id === b.id);
-                          return (
-                            <div key={b.id} className="flex items-center justify-between p-3 rounded-lg border">
-                              <div className="font-medium">{b.name}</div>
-                              <div className="flex items-center gap-3">
-                                <Select
-                                  value={m?.role ?? "student"}
-                                  onValueChange={async (newRole: any) => {
-                                    if (m) {
-                                      await supabase.from("batch_members").update({ role: newRole }).eq("user_id", u.id).eq("batch_id", b.id);
-                                      load();
-                                    }
-                                  }}
-                                  disabled={!m}
-                                >
-                                  <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="student">Student</SelectItem>
-                                    <SelectItem value="teacher">Teacher</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <Checkbox checked={!!m} onCheckedChange={(c) => assignToBatch(u.id, b.id, (m?.role as any) ?? "student", !!c)} />
-                              </div>
+                <Dialog open={isOpen} onOpenChange={(o) => setAssignOpen(o ? u.id : null)}>
+                  <DialogTrigger asChild><Button variant="outline" size="sm"><UserPlus className="h-4 w-4 mr-2" />Batches</Button></DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Assign {u.full_name || u.email} to batches</DialogTitle></DialogHeader>
+                    <div className="space-y-3 max-h-96 overflow-auto">
+                      {batches.length === 0 && <p className="text-sm text-muted-foreground">No batches yet.</p>}
+                      {batches.map(b => {
+                        const m = userMemberships.find((x: any) => x.batch_id === b.id);
+                        return (
+                          <div key={b.id} className="flex items-center justify-between p-3 rounded-lg border">
+                            <div className="font-medium">{b.name}</div>
+                            <div className="flex items-center gap-3">
+                              <Select
+                                value={m?.role ?? "student"}
+                                onValueChange={async (newRole: any) => {
+                                  if (m) {
+                                    await supabase.from("batch_members").update({ role: newRole }).eq("user_id", u.id).eq("batch_id", b.id);
+                                    load();
+                                  }
+                                }}
+                                disabled={!m}
+                              >
+                                <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="student">Student</SelectItem>
+                                  <SelectItem value="teacher">Teacher</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Checkbox checked={!!m} onCheckedChange={(c) => assignToBatch(u.id, b.id, (m?.role as any) ?? "student", !!c)} />
                             </div>
-                          );
-                        })}
-                      </div>
-                      <DialogFooter><Button onClick={() => setAssignOpen(null)}>Done</Button></DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <DialogFooter><Button onClick={() => setAssignOpen(null)}>Done</Button></DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             );
           })}
