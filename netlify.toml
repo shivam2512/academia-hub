@@ -1,11 +1,7 @@
 [build]
-  command = "npm run build"
-  publish = ".output/public"
+  command = "vite build"
+  publish = "dist/client"
 
-[functions]
-  directory = ".output/server"
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/index"
-  status = 200
+[dev]
+  command = "vite dev"
+  port = 3000
