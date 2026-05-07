@@ -1,8 +1,10 @@
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Link } from "@tanstack/react-router";
+import { initAntiInspect } from "@/lib/anti-inspect";
 
 import appCss from "../styles.css?url";
 
@@ -51,6 +53,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    initAntiInspect();
+  }, []);
+
   return (
     <AuthProvider>
       <TooltipProvider>

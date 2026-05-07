@@ -12,4 +12,10 @@ import { nitro } from "nitro/vite";
 export default defineConfig({
   cloudflare: false,
   plugins: [nitro()],
+  vite: {
+    build: {
+      // Disable source maps in production to prevent code inspection
+      sourcemap: false,
+    },
+  },
 });
