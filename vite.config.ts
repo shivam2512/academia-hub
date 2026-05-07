@@ -6,4 +6,7 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig();
+// Disable Cloudflare Workers plugin so that TanStack Start builds for Node.js
+// (produces .output/server/index.mjs instead of a Cloudflare worker-entry).
+// This is required for hosting on Render, Railway, or any Node.js platform.
+export default defineConfig({ cloudflare: false });
