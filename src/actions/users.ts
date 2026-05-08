@@ -58,3 +58,29 @@ export const createUser = createServerFn({ method: "POST" })
 
     return { id: newUserId, email: data.email };
   });
+
+export const deleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((uid: unknown) => z.string().uuid().parse(uid))
+  .handler(async ({ data: targetUserId, context }) => {
+    const { userId: callerId } = context;
+
+    if (callerId === targetUserId) {
+      throw new Error("You cannot delete yourself");
+    }
+
+    // Verify caller is superadmin
+    const { data: callerRoles, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId);
+    if (roleErr) throw new Error(roleErr.message);
+    const isSuper = (callerRoles ?? []).some((r) => r.role === "superadmin");
+    if (!isSuper) throw new Error("Only superadmins can delete users");
+
+    // Delete the auth user
+    const { error: deleteErr } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
+    if (deleteErr) throw new Error(deleteErr.message);
+
+    return { success: true };
+  });
