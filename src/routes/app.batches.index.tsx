@@ -77,7 +77,7 @@ function BatchesList() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <PageHeader
         title="Batches"
         description="All batches you have access to."

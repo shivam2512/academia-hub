@@ -34,7 +34,7 @@ function BatchOverview() {
   const students = members.filter(m => m.role === "student");
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       <div className="rounded-2xl bg-gradient-hero p-8 text-white shadow-elegant relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,oklch(0.85_0.18_310/.4),transparent_60%)]" />
         <div className="relative">

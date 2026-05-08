@@ -5,9 +5,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard, Users, BookOpen, Video, Calendar, MessageSquare,
-  GraduationCap, LogOut, Shield, FileText
+  GraduationCap, LogOut, Shield, FileText, Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useState } from "react";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles: ("superadmin"|"admin"|"teacher"|"student")[] };
 
@@ -19,9 +21,10 @@ const NAV: NavItem[] = [
 ];
 
 export function AppLayout() {
-  const { user, roles, signOut, isAdmin, loading } = useAuth();
+  const { user, roles, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [open, setOpen] = useState(false);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
@@ -37,52 +40,80 @@ export function AppLayout() {
   const initials = (user.email ?? "U").slice(0,2).toUpperCase();
   const primaryRole = roles[0] ?? "student";
 
-  return (
-    <div className="min-h-screen flex bg-gradient-subtle">
-      <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border">
-        <div className="p-6 border-b border-sidebar-border">
-          <Link to="/app" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <div className="font-bold text-lg leading-tight">Coach LMS</div>
-              <div className="text-xs text-sidebar-foreground/60">Learning Hub</div>
-            </div>
-          </Link>
-        </div>
-
-        <nav className="flex-1 p-3 space-y-1">
-          {NAV.filter(n => n.roles.some(r => roles.includes(r))).map(item => {
-            const Icon = item.icon;
-            const active = location.pathname === item.to || (item.to !== "/app" && location.pathname.startsWith(item.to));
-            return (
-              <Link key={item.to} to={item.to}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                  active ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow" : "hover:bg-sidebar-accent text-sidebar-foreground/80"
-                )}>
-                <Icon className="h-4 w-4" /> {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-3 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/30">
-            <Avatar className="h-9 w-9"><AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback></Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">{user.email}</div>
-              <Badge variant="secondary" className="text-[10px] h-4 mt-0.5 capitalize">{primaryRole}</Badge>
-            </div>
-            <Button size="icon" variant="ghost" onClick={() => { signOut(); navigate({ to: "/" }); }} className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
-              <LogOut className="h-4 w-4" />
-            </Button>
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
+      <div className="p-6 border-b border-sidebar-border">
+        <Link to="/app" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+          <div className="h-9 w-9 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow">
+            <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
+          <div>
+            <div className="font-bold text-lg leading-tight">Coach LMS</div>
+            <div className="text-xs text-sidebar-foreground/60">Learning Hub</div>
+          </div>
+        </Link>
+      </div>
+
+      <nav className="flex-1 p-3 space-y-1">
+        {NAV.filter(n => n.roles.some(r => roles.includes(r))).map(item => {
+          const Icon = item.icon;
+          const active = location.pathname === item.to || (item.to !== "/app" && location.pathname.startsWith(item.to));
+          return (
+            <Link key={item.to} to={item.to}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                active ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow" : "hover:bg-sidebar-accent text-sidebar-foreground/80"
+              )}>
+              <Icon className="h-4 w-4" /> {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="p-3 border-t border-sidebar-border">
+        <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/30">
+          <Avatar className="h-9 w-9"><AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback></Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium truncate">{user.email}</div>
+            <Badge variant="secondary" className="text-[10px] h-4 mt-0.5 capitalize">{primaryRole}</Badge>
+          </div>
+          <Button size="icon" variant="ghost" onClick={() => { signOut(); navigate({ to: "/" }); }} className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-subtle">
+      {/* Mobile Top Bar */}
+      <header className="lg:hidden h-16 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+            <GraduationCap className="h-4 w-4 text-primary-foreground" />
+          </div>
+          <span className="font-bold">Coach LMS</span>
+        </div>
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-72">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      </header>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-64 flex-col border-r border-sidebar-border sticky top-0 h-screen">
+        <SidebarContent />
       </aside>
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-x-hidden">
         <Outlet />
       </main>
     </div>

@@ -59,7 +59,7 @@ function AdminDashboard({ email, roles }: { email: string; roles: string[] }) {
   ];
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <PageHeader
         title="Admin Console"
         description={`Signed in as ${roles.join(", ") || "admin"} · ${email}`}
@@ -144,7 +144,7 @@ function TeacherDashboard({ email, userId }: { email: string; userId: string }) 
   }, [userId]);
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <PageHeader
         title={`Welcome, ${email.split("@")[0]}`}
         description="Teacher dashboard — manage your batches, schedule classes and share materials."
