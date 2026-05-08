@@ -15,6 +15,14 @@ export const Route = createFileRoute("/")({
 function Landing() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 selection:bg-primary/30">
+      {/* Dev Banner */}
+      <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border-b border-white/10 py-3 text-center px-4 relative z-[60]">
+        <p className="text-sm md:text-base text-blue-200">
+          🚀 This site is in <strong>development and testing phase</strong>. 
+          Reach out to <a href="mailto:shivamshinde786@gmail.com" className="font-bold underline hover:text-white transition-colors">shivamshinde786@gmail.com</a> for suggestions or bug reports. Thanks!
+        </p>
+      </div>
+
       {/* Nav */}
       <header className="border-b border-white/10 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
