@@ -6,9 +6,10 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   BookOpen, Users, Calendar, FileText, Video, MessageSquare,
-  GraduationCap, Presentation, ClipboardList, TrendingUp, Clock, ArrowRight
+  GraduationCap, Presentation, TrendingUp, Clock, ArrowRight, CreditCard
 } from "lucide-react";
 
 export const Route = createFileRoute("/app/")({ component: Dashboard });
@@ -25,12 +26,12 @@ function Dashboard() {
 
 /* ---------------- ADMIN ---------------- */
 function AdminDashboard({ email, roles }: { email: string; roles: string[] }) {
-  const [stats, setStats] = useState({ batches: 0, users: 0, teachers: 0, students: 0, classes: 0, notes: 0, videos: 0 });
+  const [stats, setStats] = useState({ batches: 0, users: 0, teachers: 0, students: 0, classes: 0, notes: 0, videos: 0, pendingPayments: 0 });
   const [upcoming, setUpcoming] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
-      const [b, u, t, s, c, n, v, up] = await Promise.all([
+      const [b, u, t, s, c, n, v, up, invs] = await Promise.all([
         supabase.from("batches").select("id", { count: "exact", head: true }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "teacher"),
@@ -39,10 +40,15 @@ function AdminDashboard({ email, roles }: { email: string; roles: string[] }) {
         supabase.from("notes").select("id", { count: "exact", head: true }),
         supabase.from("video_recordings").select("id", { count: "exact", head: true }),
         supabase.from("live_classes").select("id, title, scheduled_at, batch_id, batches(name)").gte("scheduled_at", new Date().toISOString()).order("scheduled_at").limit(5),
+        supabase.from("student_invoices").select("total_fee, paid_amount"),
       ]);
+
+      const pending = (invs.data ?? []).reduce((acc, curr) => acc + (Number(curr.total_fee) - Number(curr.paid_amount)), 0);
+
       setStats({
         batches: b.count ?? 0, users: u.count ?? 0, teachers: t.count ?? 0, students: s.count ?? 0,
         classes: c.count ?? 0, notes: n.count ?? 0, videos: v.count ?? 0,
+        pendingPayments: pending
       });
       setUpcoming(up.data ?? []);
     })();
@@ -51,7 +57,7 @@ function AdminDashboard({ email, roles }: { email: string; roles: string[] }) {
   const tiles = [
     { label: "Batches", value: stats.batches, icon: BookOpen, color: "from-violet-500 to-fuchsia-500" },
     { label: "Total users", value: stats.users, icon: Users, color: "from-blue-500 to-cyan-500" },
-    { label: "Teachers", value: stats.teachers, icon: Presentation, color: "from-amber-500 to-orange-500" },
+    { label: "Pending Fees", value: `₹${stats.pendingPayments.toLocaleString()}`, icon: TrendingUp, color: "from-rose-500 to-orange-500" },
     { label: "Students", value: stats.students, icon: GraduationCap, color: "from-emerald-500 to-teal-500" },
     { label: "Live classes", value: stats.classes, icon: Calendar, color: "from-pink-500 to-rose-500" },
     { label: "Notes", value: stats.notes, icon: FileText, color: "from-indigo-500 to-purple-500" },
@@ -71,7 +77,7 @@ function AdminDashboard({ email, roles }: { email: string; roles: string[] }) {
             <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${t.color} flex items-center justify-center mb-3`}>
               <t.icon className="h-5 w-5 text-white" />
             </div>
-            <div className="text-2xl font-bold">{t.value}</div>
+            <div className={cn("font-bold truncate", typeof t.value === "string" ? "text-lg" : "text-2xl")}>{t.value}</div>
             <div className="text-xs text-muted-foreground">{t.label}</div>
           </Card>
         ))}
@@ -81,9 +87,9 @@ function AdminDashboard({ email, roles }: { email: string; roles: string[] }) {
         <Card className="p-6 shadow-card lg:col-span-1">
           <h2 className="text-lg font-semibold mb-4">Quick actions</h2>
           <div className="space-y-2">
+            <Link to="/app/invoices"><Button variant="outline" className="w-full justify-between">Manage invoices <ArrowRight className="h-4 w-4" /></Button></Link>
             <Link to="/app/users"><Button variant="outline" className="w-full justify-between">Manage users <ArrowRight className="h-4 w-4" /></Button></Link>
             <Link to="/app/batches"><Button variant="outline" className="w-full justify-between">Manage batches <ArrowRight className="h-4 w-4" /></Button></Link>
-            <Link to="/app/roles"><Button variant="outline" className="w-full justify-between">Assign roles <ArrowRight className="h-4 w-4" /></Button></Link>
           </div>
         </Card>
 
@@ -225,6 +231,7 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
   const [upcoming, setUpcoming] = useState<any[]>([]);
   const [recentNotes, setRecentNotes] = useState<any[]>([]);
   const [recentVideos, setRecentVideos] = useState<any[]>([]);
+  const [invoice, setInvoice] = useState<any>(null);
 
   useEffect(() => {
     (async () => {
@@ -235,55 +242,99 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
       const batches = (memberships ?? []).map((m: any) => m.batches).filter(Boolean);
       setMyBatches(batches);
       const ids = batches.map((b: any) => b.id);
-      if (ids.length === 0) return;
-
+      
       const nowIso = new Date().toISOString();
-      const [up, n, v] = await Promise.all([
-        supabase.from("live_classes").select("id, title, scheduled_at, duration_minutes, meeting_url, batch_id, batches(name)").in("batch_id", ids).gte("scheduled_at", nowIso).order("scheduled_at").limit(5),
-        supabase.from("notes").select("id, title, batch_id, created_at, batches(name)").in("batch_id", ids).order("created_at", { ascending: false }).limit(5),
-        supabase.from("video_recordings").select("id, title, batch_id, created_at, batches(name)").in("batch_id", ids).order("created_at", { ascending: false }).limit(5),
+      const [up, n, v, inv] = await Promise.all([
+        ids.length ? supabase.from("live_classes").select("id, title, scheduled_at, duration_minutes, meeting_url, batch_id, batches(name)").in("batch_id", ids).gte("scheduled_at", nowIso).order("scheduled_at").limit(5) : Promise.resolve({ data: [] }),
+        ids.length ? supabase.from("notes").select("id, title, batch_id, created_at, batches(name)").in("batch_id", ids).order("created_at", { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
+        ids.length ? supabase.from("video_recordings").select("id, title, batch_id, created_at, batches(name)").in("batch_id", ids).order("created_at", { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
+        supabase.from("student_invoices").select("*").eq("user_id", userId).single(),
       ]);
+
       const list = up.data ?? [];
       setNextClass(list[0] ?? null);
       setUpcoming(list.slice(1));
       setRecentNotes(n.data ?? []);
       setRecentVideos(v.data ?? []);
+      setInvoice(inv.data);
     })();
   }, [userId]);
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <PageHeader
         title={`Hi ${email.split("@")[0]} 👋`}
         description="Your learning hub — join live classes, review notes and watch recordings."
       />
 
-      {/* Hero: next class */}
-      {nextClass ? (
-        <Card className="p-0 overflow-hidden shadow-elegant mb-6 border-0">
-          <div className="bg-gradient-hero text-white p-6 relative">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,oklch(0.85_0.18_310/.4),transparent_60%)]" />
-            <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <Badge className="bg-white/25 text-white border-white/30 mb-2">Next live class</Badge>
-                <h2 className="text-2xl font-bold">{nextClass.title}</h2>
-                <div className="text-white/85 text-sm mt-1">{nextClass.batches?.name} · {new Date(nextClass.scheduled_at).toLocaleString()} · {nextClass.duration_minutes} min</div>
+      <div className="grid lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2">
+          {nextClass ? (
+            <Card className="p-0 overflow-hidden shadow-elegant h-full border-0">
+              <div className="bg-gradient-hero text-white p-8 relative h-full flex flex-col justify-center">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,oklch(0.85_0.18_310/.4),transparent_60%)]" />
+                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div>
+                    <Badge className="bg-white/25 text-white border-white/30 mb-2">Next live class</Badge>
+                    <h2 className="text-3xl font-bold">{nextClass.title}</h2>
+                    <div className="text-white/85 text-sm mt-1">{nextClass.batches?.name} · {new Date(nextClass.scheduled_at).toLocaleString()} · {nextClass.duration_minutes} min</div>
+                  </div>
+                  <a href={nextClass.meeting_url} target="_blank" rel="noreferrer">
+                    <Button size="lg" className="bg-white text-primary hover:bg-white/90 px-8 h-12 rounded-full font-bold shadow-lg"><Video className="h-5 w-5 mr-2" />Join class</Button>
+                  </a>
+                </div>
               </div>
-              <a href={nextClass.meeting_url} target="_blank" rel="noreferrer">
-                <Button size="lg" className="bg-white text-primary hover:bg-white/90"><Video className="h-4 w-4 mr-2" />Join class</Button>
-              </a>
+            </Card>
+          ) : (
+            <Card className="p-8 h-full shadow-card flex items-center gap-6 border-dashed border-2 bg-muted/20">
+              <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+                <Calendar className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <div>
+                <div className="text-xl font-semibold">No upcoming live classes</div>
+                <div className="text-muted-foreground">Check back later or browse your batches below.</div>
+              </div>
+            </Card>
+          )}
+        </div>
+
+        <Card className="p-6 shadow-elegant bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+            <TrendingUp className="w-24 h-24" />
+          </div>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><CreditCard className="h-5 w-5 text-blue-400" /> Fee Details</h2>
+          {!invoice ? (
+             <div className="space-y-2 opacity-60">
+                <p className="text-sm">No invoice generated yet.</p>
+                <div className="h-2 bg-white/10 rounded w-full" />
+                <div className="h-2 bg-white/10 rounded w-2/3" />
+             </div>
+          ) : (
+            <div className="space-y-4 relative z-10">
+              <div>
+                <div className="text-xs text-white/60 uppercase tracking-wider font-semibold">Pending Amount</div>
+                <div className="text-3xl font-bold text-rose-400">₹{(Number(invoice.total_fee) - Number(invoice.paid_amount)).toLocaleString()}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/10">
+                <div>
+                  <div className="text-[10px] text-white/50 uppercase">Total Fee</div>
+                  <div className="text-sm font-medium">₹{Number(invoice.total_fee).toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-white/50 uppercase">Paid</div>
+                  <div className="text-sm font-medium text-emerald-400">₹{Number(invoice.paid_amount).toLocaleString()}</div>
+                </div>
+              </div>
+              <Badge className={cn(
+                "w-full justify-center py-1 mt-2",
+                invoice.status === "fully_paid" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+              )}>
+                {invoice.status.replace("_", " ")}
+              </Badge>
             </div>
-          </div>
+          )}
         </Card>
-      ) : (
-        <Card className="p-6 mb-6 shadow-card flex items-center gap-4">
-          <Calendar className="h-10 w-10 text-muted-foreground/50" />
-          <div>
-            <div className="font-medium">No upcoming live classes</div>
-            <div className="text-sm text-muted-foreground">Check back later or browse your batches below.</div>
-          </div>
-        </Card>
-      )}
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatTile icon={BookOpen} label="Enrolled batches" value={myBatches.length} color="from-violet-500 to-fuchsia-500" />
@@ -296,7 +347,7 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
         <Card className="p-6 shadow-card">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><BookOpen className="h-5 w-5 text-primary" /> My batches</h2>
           {myBatches.length === 0 ? (
-            <p className="text-muted-foreground text-sm py-6 text-center">You haven't been added to a batch yet. Ask your teacher to add you.</p>
+            <p className="text-muted-foreground text-sm py-6 text-center">You haven't been added to a batch yet.</p>
           ) : (
             <div className="space-y-2">
               {myBatches.map((b: any) => (
@@ -345,13 +396,13 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
   );
 }
 
-function StatTile({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: string }) {
+function StatTile({ icon: Icon, label, value, color }: { icon: any; label: string; value: number | string; color: string }) {
   return (
     <Card className="p-5 shadow-card hover:shadow-elegant transition-all">
       <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center mb-3`}>
         <Icon className="h-5 w-5 text-white" />
       </div>
-      <div className="text-2xl font-bold">{value}</div>
+      <div className={cn("font-bold truncate", typeof value === "string" ? "text-lg" : "text-2xl")}>{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </Card>
   );
