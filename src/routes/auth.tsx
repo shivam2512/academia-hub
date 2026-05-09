@@ -44,7 +44,7 @@ function AuthPage() {
           <div className="h-11 w-11 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
             <GraduationCap className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="font-bold text-2xl">Coach LMS</span>
+          <span className="font-bold text-2xl">DBS IT</span>
         </Link>
 
         <Card className="p-8 shadow-elegant">

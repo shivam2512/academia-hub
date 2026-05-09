@@ -48,7 +48,7 @@ export function AppLayout() {
             <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <div className="font-bold text-lg leading-tight">Coach LMS</div>
+            <div className="font-bold text-lg leading-tight">DBS IT</div>
             <div className="text-xs text-sidebar-foreground/60">Learning Hub</div>
           </div>
         </Link>
@@ -94,7 +94,7 @@ export function AppLayout() {
           <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
             <GraduationCap className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="font-bold">Coach LMS</span>
+          <span className="font-bold">DBS IT</span>
         </div>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>

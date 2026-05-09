@@ -26,9 +26,9 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Coach LMS — Modern Learning Platform for Coaching Institutes" },
-      { name: "description", content: "All-in-one LMS for coaching institutes: batches, notes, video recordings, live classes via Zoom & Meet, and batch chat communities." },
-      { property: "og:title", content: "Coach LMS — Modern Learning Platform" },
+      { title: "DBS IT — Switch to IT in 3 Months" },
+      { name: "description", content: "Switch your career from NON IT to IT with industry ready courses within 3 months at DBS IT." },
+      { property: "og:title", content: "DBS IT — Modern Learning Platform" },
       { property: "og:description", content: "Run your coaching institute end-to-end with batches, notes, videos, live classes and chat." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

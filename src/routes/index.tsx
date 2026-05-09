@@ -6,8 +6,8 @@ export const Route = createFileRoute("/")({
   component: Landing,
   head: () => ({
     meta: [
-      { title: "DBS — Switch to IT in 3 Months" },
-      { name: "description", content: "Switch your career from NON IT to IT with industry ready courses within 3 months at DBS." },
+      { title: "DBS IT — Switch to IT in 3 Months" },
+      { name: "description", content: "Switch your career from NON IT to IT with industry ready courses within 3 months at DBS IT." },
     ],
   }),
 });
@@ -30,7 +30,7 @@ function Landing() {
             <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)] group-hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] transition-all duration-300">
               <Code2 className="h-6 w-6 text-white" />
             </div>
-            <span className="font-bold text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">DBS</span>
+            <span className="font-bold text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">DBS IT</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link to="/auth"><Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10">Sign in</Button></Link>
@@ -120,7 +120,7 @@ function Landing() {
       <section className="relative container mx-auto px-6 py-24 z-10 border-t border-white/10">
         <div className="text-center max-w-3xl mx-auto mb-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-sm font-medium text-indigo-300 mb-6 backdrop-blur-sm">
-            Powered by DBS LMS
+            Powered by DBS IT
           </div>
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">A world-class learning platform</h2>
           <p className="text-slate-400 text-lg md:text-xl">Your transition to IT is supported by our state-of-the-art Learning Management System, designed for a seamless educational experience.</p>
@@ -166,9 +166,9 @@ function Landing() {
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <Code2 className="h-5 w-5 text-slate-400" />
-            <span className="font-semibold text-slate-300 text-base">DBS</span>
+            <span className="font-semibold text-slate-300 text-base">DBS IT</span>
           </div>
-          <p>© {new Date().getFullYear()} DBS Institute. Empowering careers.</p>
+          <p>© {new Date().getFullYear()} DBS IT. Empowering careers.</p>
         </div>
       </footer>
     </div>
