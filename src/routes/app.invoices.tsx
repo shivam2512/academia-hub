@@ -252,7 +252,7 @@ function InvoicesPage() {
                         >
                           <option value="pending">Pending</option>
                           <option value="paid">Paid</option>
-                        </option>
+                        </select>
                       </div>
                       <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeEmi(idx)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
