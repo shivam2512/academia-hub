@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Video, ExternalLink, Trash2, Maximize, Folder, FolderPlus, ArrowLeft } from "lucide-react";
+import { Plus, Video, ExternalLink, Trash2, Maximize, Folder, FolderPlus, ArrowLeft, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/batches/$batchId/videos")({ component: VideosPage });
@@ -44,6 +44,21 @@ function VideosPage() {
   const [open, setOpen] = useState(false);
   const [openFolderDialog, setOpenFolderDialog] = useState(false);
   const [provider, setProvider] = useState<"youtube"|"vimeo"|"other">("youtube");
+  const [fullscreenId, setFullscreenId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      if (!document.fullscreenElement) {
+        setFullscreenId(null);
+      }
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    document.addEventListener("webkitfullscreenchange", handleFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFsChange);
+      document.removeEventListener("webkitfullscreenchange", handleFsChange);
+    };
+  }, []);
 
   const load = async () => {
     const { data: videosData } = await supabase.from("video_recordings").select("*").eq("batch_id", batchId).order("created_at", { ascending: false });
@@ -92,13 +107,32 @@ function VideosPage() {
     toast.success("Folder deleted"); load();
   };
 
-  const toggleFullscreen = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const container = e.currentTarget.closest('.video-wrapper');
+  const toggleFullscreen = (id: string, e: React.MouseEvent) => {
+    const container = (e.currentTarget.closest('.video-wrapper') as HTMLElement);
     if (!container) return;
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(console.error);
+
+    if (fullscreenId === id) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setFullscreenId(null);
+      return;
+    }
+
+    // Try native fullscreen first
+    if (container.requestFullscreen) {
+      container.requestFullscreen()
+        .then(() => setFullscreenId(id))
+        .catch(() => {
+          // Fallback to pseudo-fullscreen if native fails
+          setFullscreenId(id);
+        });
+    } else if ((container as any).webkitRequestFullscreen) {
+      (container as any).webkitRequestFullscreen();
+      setFullscreenId(id);
     } else {
-      container.requestFullscreen().catch(console.error);
+      // Fallback for iOS/Browsers without Fullscreen API
+      setFullscreenId(id);
     }
   };
 
@@ -191,22 +225,44 @@ function VideosPage() {
               const vimeoId = getVimeoId(v.video_url);
               return (
                 <Card key={v.id} className="overflow-hidden shadow-card hover:shadow-elegant transition-all">
-                  <div className="aspect-video bg-black relative overflow-hidden group video-wrapper">
+                  <div className={cn(
+                    "aspect-video bg-black relative overflow-hidden group video-wrapper transition-all duration-300",
+                    fullscreenId === v.id && "fixed inset-0 z-[9999] w-screen h-screen aspect-auto flex items-center justify-center"
+                  )}>
                     {/* Anti-click shields */}
                     <div className="absolute top-0 left-0 w-full h-[15%] min-h-[60px] z-10" title="Protected video" onContextMenu={(e) => e.preventDefault()} />
                     <div className="absolute bottom-0 left-0 w-[20%] max-w-[200px] h-[15%] min-h-[80px] z-10" title="Protected video" onContextMenu={(e) => e.preventDefault()} />
                     <div className="absolute bottom-0 right-0 w-[25%] max-w-[250px] h-[15%] min-h-[80px] z-10" title="Protected video" onContextMenu={(e) => e.preventDefault()} />
                     
                     {(ytId || vimeoId) && (
-                      <button onClick={toggleFullscreen} className="absolute top-4 right-4 z-20 p-2 bg-black/60 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80" title="Toggle Fullscreen">
-                        <Maximize className="w-4 h-4" />
+                      <button 
+                        onClick={(e) => toggleFullscreen(v.id, e)} 
+                        className={cn(
+                          "absolute top-4 right-4 z-20 p-2 bg-black/60 text-white rounded-md transition-all hover:bg-black/80",
+                          fullscreenId === v.id ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                        )}
+                        title={fullscreenId === v.id ? "Close Fullscreen" : "Toggle Fullscreen"}
+                      >
+                        {fullscreenId === v.id ? <X className="w-5 h-5" /> : <Maximize className="w-4 h-4" />}
                       </button>
                     )}
 
                     {ytId ? (
-                      <iframe src={`https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0&showinfo=0&controls=1&disablekb=1&fs=0`} className="w-full h-full" title={v.title} sandbox="allow-scripts allow-same-origin allow-presentation" />
+                      <iframe 
+                        src={`https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0&showinfo=0&controls=1&disablekb=1&fs=1`} 
+                        className={cn("w-full h-full", fullscreenId === v.id && "max-h-full max-w-full aspect-video shadow-2xl")} 
+                        title={v.title} 
+                        sandbox="allow-scripts allow-same-origin allow-presentation" 
+                        allowFullScreen
+                      />
                     ) : vimeoId ? (
-                      <iframe src={`https://player.vimeo.com/video/${vimeoId}?title=0&byline=0&portrait=0`} className="w-full h-full" title={v.title} sandbox="allow-scripts allow-same-origin allow-presentation" />
+                      <iframe 
+                        src={`https://player.vimeo.com/video/${vimeoId}?title=0&byline=0&portrait=0`} 
+                        className={cn("w-full h-full", fullscreenId === v.id && "max-h-full max-w-full aspect-video shadow-2xl")} 
+                        title={v.title} 
+                        sandbox="allow-scripts allow-same-origin allow-presentation" 
+                        allowFullScreen
+                      />
                     ) : isAdmin || v.uploaded_by === user?.id ? (
                       <a href={v.video_url} target="_blank" rel="noreferrer" className="flex items-center justify-center w-full h-full bg-gradient-primary text-primary-foreground hover:opacity-90">
                         <div className="text-center"><Video className="h-10 w-10 mx-auto mb-2" /><div className="text-sm">Open video</div></div>
