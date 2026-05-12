@@ -254,8 +254,7 @@ function ChatPage() {
           <Button onClick={send} disabled={sending || (!text.trim() && !file)} className="bg-gradient-primary text-primary-foreground hover:opacity-90"><Send className="h-4 w-4" /></Button>
         </div>
       </div>
-      </div>
-      
+
       <Dialog open={!!selectedImage} onOpenChange={(o) => !o && setSelectedImage(null)}>
         <DialogContent className="max-w-5xl p-0 overflow-hidden bg-transparent border-0 shadow-none sm:rounded-none">
           <DialogHeader>
