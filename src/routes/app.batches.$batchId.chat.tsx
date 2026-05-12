@@ -149,7 +149,7 @@ function ChatPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.25rem)]">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-1 bg-gradient-subtle">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-1 bg-gradient-subtle">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <MessageSquare className="h-12 w-12 mb-3 opacity-40" />
@@ -170,17 +170,17 @@ function ChatPage() {
             <div key={m.id} className={cn("flex gap-2 group", mine ? "flex-row-reverse" : "")}>
               <div className="w-8 flex-shrink-0">
                 {showHeader && (
-                  <Avatar className="h-8 w-8"><AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">{name.slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
+                  <Avatar className="h-8 w-8"><AvatarFallback className="bg-gradient-primary text-primary-foreground text-[10px] sm:text-xs">{name.slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
                 )}
               </div>
-              <div className={cn("max-w-[70%] flex flex-col", mine ? "items-end" : "items-start")}>
-                {showHeader && <div className="text-xs text-muted-foreground mb-1 px-1">{name} · {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>}
+              <div className={cn("max-w-[85%] sm:max-w-[70%] flex flex-col", mine ? "items-end" : "items-start")}>
+                {showHeader && <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 px-1">{name} · {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>}
                  <div className={cn(
                   "rounded-2xl px-3 py-2 shadow-sm relative w-fit",
                   mine ? "bg-gradient-primary text-primary-foreground rounded-tr-sm self-end" : "bg-card border rounded-tl-sm self-start"
                 )}>
                   {reply && (
-                    <div className={cn("text-xs px-2 py-1 rounded mb-1 border-l-2", mine ? "bg-white/20 border-white/60" : "bg-muted border-primary")}>
+                    <div className={cn("text-[10px] sm:text-xs px-2 py-1 rounded mb-1 border-l-2", mine ? "bg-white/20 border-white/60" : "bg-muted border-primary")}>
                       <div className="font-medium opacity-80">{replyAuthor?.full_name || replyAuthor?.email || "User"}</div>
                       <div className="opacity-70 truncate">{reply.content || "(media)"}</div>
                     </div>
@@ -191,22 +191,22 @@ function ChatPage() {
                         <img 
                           src={mediaUrls[m.media_url]} 
                           alt="attachment" 
-                          className="max-w-full h-auto max-h-[300px] object-contain cursor-pointer hover:opacity-95 transition-opacity block mx-auto" 
+                          className="max-w-full h-auto max-h-[250px] sm:max-h-[350px] object-contain cursor-pointer hover:opacity-95 transition-opacity block mx-auto" 
                           onClick={() => setSelectedImage(mediaUrls[m.media_url!])}
                         />
                       </div>
                     ) : (
-                      <a href={mediaUrls[m.media_url]} target="_blank" rel="noreferrer" className="flex items-center gap-2 underline text-sm mb-1"><Paperclip className="h-3 w-3" />Download attachment</a>
+                      <a href={mediaUrls[m.media_url]} target="_blank" rel="noreferrer" className="flex items-center gap-2 underline text-xs sm:text-sm mb-1"><Paperclip className="h-3 w-3" />Download attachment</a>
                     )
                   )}
-                  {m.content && <div className="whitespace-pre-wrap break-words text-sm">{m.content}</div>}
+                  {m.content && <div className="whitespace-pre-wrap break-words text-xs sm:text-sm">{m.content}</div>}
                 </div>
                 {Object.keys(rxGroups).length > 0 && (
                   <div className="flex gap-1 mt-1 flex-wrap">
                     {Object.entries(rxGroups).map(([e, n]) => {
                       const reacted = rxList.some(r => r.emoji === e && r.user_id === user?.id);
                       return (
-                        <button key={e} onClick={() => toggleReaction(m.id, e)} className={cn("text-xs px-2 py-0.5 rounded-full border bg-card hover:bg-muted", reacted && "border-primary bg-primary/10")}>
+                        <button key={e} onClick={() => toggleReaction(m.id, e)} className={cn("text-[10px] px-1.5 py-0.5 rounded-full border bg-card hover:bg-muted", reacted && "border-primary bg-primary/10")}>
                           {e} {n}
                         </button>
                       );
@@ -214,7 +214,11 @@ function ChatPage() {
                   </div>
                 )}
               </div>
-              <div className={cn("opacity-0 group-hover:opacity-100 flex items-center gap-1 self-center transition-opacity", mine ? "flex-row-reverse" : "")}>
+              <div className={cn(
+                "flex items-center gap-1 self-center transition-opacity", 
+                "opacity-100 sm:opacity-0 sm:group-hover:opacity-100", // Visible on mobile, hover on desktop
+                mine ? "flex-row-reverse" : ""
+              )}>
                 <Popover>
                   <PopoverTrigger asChild><Button size="icon" variant="ghost" className="h-7 w-7"><SmilePlus className="h-3.5 w-3.5" /></Button></PopoverTrigger>
                   <PopoverContent className="w-auto p-1 flex gap-1">
