@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Send, Paperclip, X, SmilePlus, Reply, Trash2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/app/batches/$batchId/chat")({ component: ChatPage });
 
@@ -31,6 +32,7 @@ function ChatPage() {
   const [replyTo, setReplyTo] = useState<Msg | null>(null);
   const [sending, setSending] = useState(false);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,9 +175,9 @@ function ChatPage() {
               </div>
               <div className={cn("max-w-[70%] flex flex-col", mine ? "items-end" : "items-start")}>
                 {showHeader && <div className="text-xs text-muted-foreground mb-1 px-1">{name} · {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>}
-                <div className={cn(
-                  "rounded-2xl px-3 py-2 shadow-sm relative",
-                  mine ? "bg-gradient-primary text-primary-foreground rounded-tr-sm" : "bg-card border rounded-tl-sm"
+                 <div className={cn(
+                  "rounded-2xl px-3 py-2 shadow-sm relative w-fit",
+                  mine ? "bg-gradient-primary text-primary-foreground rounded-tr-sm self-end" : "bg-card border rounded-tl-sm self-start"
                 )}>
                   {reply && (
                     <div className={cn("text-xs px-2 py-1 rounded mb-1 border-l-2", mine ? "bg-white/20 border-white/60" : "bg-muted border-primary")}>
@@ -185,7 +187,14 @@ function ChatPage() {
                   )}
                   {m.media_url && mediaUrls[m.media_url] && (
                     m.media_type?.startsWith("image/") ? (
-                      <img src={mediaUrls[m.media_url]} alt="attachment" className="rounded-lg max-w-xs max-h-64 mb-1" />
+                      <div className="mb-1 rounded-lg overflow-hidden border border-black/5 bg-black/5">
+                        <img 
+                          src={mediaUrls[m.media_url]} 
+                          alt="attachment" 
+                          className="max-w-full h-auto max-h-[300px] object-contain cursor-pointer hover:opacity-95 transition-opacity block mx-auto" 
+                          onClick={() => setSelectedImage(mediaUrls[m.media_url!])}
+                        />
+                      </div>
                     ) : (
                       <a href={mediaUrls[m.media_url]} target="_blank" rel="noreferrer" className="flex items-center gap-2 underline text-sm mb-1"><Paperclip className="h-3 w-3" />Download attachment</a>
                     )
@@ -245,6 +254,23 @@ function ChatPage() {
           <Button onClick={send} disabled={sending || (!text.trim() && !file)} className="bg-gradient-primary text-primary-foreground hover:opacity-90"><Send className="h-4 w-4" /></Button>
         </div>
       </div>
+      </div>
+      
+      <Dialog open={!!selectedImage} onOpenChange={(o) => !o && setSelectedImage(null)}>
+        <DialogContent className="max-w-5xl p-0 overflow-hidden bg-transparent border-0 shadow-none sm:rounded-none">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Image Preview</DialogTitle>
+            <DialogDescription className="sr-only">Full-size view of the chat attachment</DialogDescription>
+          </DialogHeader>
+          <div className="relative flex items-center justify-center w-full h-full max-h-[90vh]">
+            <img 
+              src={selectedImage || ""} 
+              alt="full size" 
+              className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" 
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
