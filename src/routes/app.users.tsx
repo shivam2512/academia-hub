@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Users, UserPlus, Lock, Plus, Trash2 } from "lucide-react";
+import { Users, UserPlus, Lock, Plus, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { createUser, deleteUser } from "@/actions/users";
 
@@ -113,6 +113,13 @@ function UsersPage() {
     }
   };
 
+  const [search, setSearch] = useState("");
+
+  const filteredUsers = users.filter(u => 
+    u.full_name?.toLowerCase().includes(search.toLowerCase()) || 
+    u.email?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="p-4 md:p-8">
       <PageHeader
@@ -151,8 +158,24 @@ function UsersPage() {
         )}
       />
       <Card className="shadow-card overflow-hidden">
+        <div className="p-4 bg-muted/30 border-b flex items-center gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search users by name or email..." 
+              className="pl-9 bg-background"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="divide-y">
-          {users.map(u => {
+          {filteredUsers.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground">
+              <Users className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              {search ? `No results for "${search}"` : "No users yet."}
+            </div>
+          ) : filteredUsers.map(u => {
             const userRoles = roles[u.id] || [];
             const userMemberships = memberships[u.id] || [];
             const isOpen = assignOpen === u.id;
@@ -220,7 +243,6 @@ function UsersPage() {
               </div>
             );
           })}
-          {users.length === 0 && <div className="p-8 text-center text-muted-foreground"><Users className="h-10 w-10 mx-auto mb-2 opacity-40" />No users yet.</div>}
         </div>
       </Card>
     </div>

@@ -7,7 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Lock, Shield, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Lock, Shield, X, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ function RolesPage() {
   const { hasRole, user } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<Record<string, string[]>>({});
+  const [search, setSearch] = useState("");
 
   const load = async () => {
     const [u, r] = await Promise.all([
@@ -45,13 +47,34 @@ function RolesPage() {
     const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role as any);
     if (error) toast.error(error.message); else { toast.success("Role removed"); load(); }
   };
+  
+  const filteredUsers = users.filter(u => 
+    u.full_name?.toLowerCase().includes(search.toLowerCase()) || 
+    u.email?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="p-8">
       <PageHeader title="Roles & Permissions" description="Assign roles. Only superadmins can manage roles." />
       <Card className="shadow-card overflow-hidden">
+        <div className="p-4 bg-muted/30 border-b flex items-center gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search by name or email..." 
+              className="pl-9 bg-background"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="divide-y">
-          {users.map(u => {
+          {filteredUsers.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground">
+              <Shield className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              {search ? `No results for "${search}"` : "No users found."}
+            </div>
+          ) : filteredUsers.map(u => {
             const userRoles = roles[u.id] || [];
             const available = ALL_ROLES.filter(r => !userRoles.includes(r));
             return (
