@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   BookOpen, Users, Calendar, FileText, Video, MessageSquare,
-  GraduationCap, Presentation, TrendingUp, Clock, ArrowRight, CreditCard
+  GraduationCap, Presentation, TrendingUp, Clock, ArrowRight, CreditCard, Download
 } from "lucide-react";
+import { generateReceipt } from "@/lib/receipt";
 
 export const Route = createFileRoute("/app/")({ component: Dashboard });
 
@@ -326,11 +327,27 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
                 </div>
               </div>
               <Badge className={cn(
-                "w-full justify-center py-1 mt-2",
+                "w-full justify-center py-1 mt-2 mb-3",
                 invoice.status === "fully_paid" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"
               )}>
                 {invoice.status.replace("_", " ")}
               </Badge>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white"
+                onClick={() => generateReceipt({
+                  studentName: email.split("@")[0], // Fallback if name not in profile state yet
+                  studentEmail: email,
+                  totalFee: Number(invoice.total_fee),
+                  paidAmount: Number(invoice.paid_amount),
+                  paymentDate: new Date().toLocaleDateString(),
+                  status: invoice.status
+                })}
+              >
+                <Download className="h-4 w-4 mr-2" /> Download Receipt
+              </Button>
             </div>
           )}
         </Card>

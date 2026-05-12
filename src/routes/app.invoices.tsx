@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, CreditCard, History, Plus, Trash2, Save, IndianRupee } from "lucide-react";
+import { Search, CreditCard, History, Plus, Trash2, Save, IndianRupee, Download } from "lucide-react";
 import { toast } from "sonner";
+import { generateReceipt } from "@/lib/receipt";
 
 export const Route = createFileRoute("/app/invoices")({ component: InvoicesPage });
 
@@ -184,7 +185,22 @@ function InvoicesPage() {
                         {s.invoice?.status?.replace("_", " ") ?? "Unpaid"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right flex justify-end gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-primary border-primary hover:bg-primary/5"
+                        onClick={() => generateReceipt({
+                          studentName: s.full_name || "Student",
+                          studentEmail: s.email || "",
+                          totalFee: s.invoice?.total_fee ?? 0,
+                          paidAmount: s.invoice?.paid_amount ?? 0,
+                          paymentDate: new Date().toLocaleDateString(),
+                          status: s.invoice?.status ?? "unpaid"
+                        })}
+                      >
+                        <Download className="h-4 w-4 mr-1" /> Receipt
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => openEditor(s)}>Manage</Button>
                     </td>
                   </tr>
