@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,10 +46,11 @@ function VideosPage() {
   const [openFolderDialog, setOpenFolderDialog] = useState(false);
   const [provider, setProvider] = useState<"youtube"|"vimeo"|"other">("youtube");
   const [fullscreenId, setFullscreenId] = useState<string | null>(null);
-
+  
   useEffect(() => {
     const handleFsChange = () => {
-      if (!document.fullscreenElement) {
+      const fsElement = document.fullscreenElement || (document as any).webkitFullscreenElement;
+      if (!fsElement) {
         setFullscreenId(null);
       }
     };
@@ -112,8 +114,13 @@ function VideosPage() {
     if (!container) return;
 
     if (fullscreenId === id) {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
+      const fsElement = document.fullscreenElement || (document as any).webkitFullscreenElement;
+      if (fsElement) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if ((document as any).webkitExitFullscreen) {
+          (document as any).webkitExitFullscreen();
+        }
       }
       setFullscreenId(null);
       return;
