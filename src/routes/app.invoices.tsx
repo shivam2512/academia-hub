@@ -331,7 +331,10 @@ function InvoicesPage() {
                 <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
                   <div className="space-y-2">
                     <Label>Down Payment (₹)</Label>
-                    <Input type="number" value={bajajDownPayment} onChange={e => setBajajDownPayment(Number(e.target.value))} />
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input type="number" value={bajajDownPayment} onChange={e => setBajajDownPayment(Number(e.target.value))} className="pl-9" />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Bajaj LAN No</Label>
