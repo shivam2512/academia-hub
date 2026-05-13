@@ -278,7 +278,7 @@ function VideosPage() {
 
                     {ytId ? (
                       <iframe 
-                        src={`https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0&showinfo=0&controls=1&disablekb=1&fs=1&iv_load_policy=3`} 
+                        src={`https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0&showinfo=0&controls=1&disablekb=1&fs=0&iv_load_policy=3`} 
                         className={cn("w-full h-full pointer-events-auto", fullscreenId === v.id && "max-h-full max-w-full aspect-video shadow-2xl")} 
                         title={v.title} 
                         sandbox="allow-scripts allow-same-origin allow-presentation" 
