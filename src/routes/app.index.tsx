@@ -359,18 +359,36 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
       </div>
 
       {profile && (
-        <Card className="p-6 mb-6 shadow-card border-l-4 border-l-primary">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Users className="h-4 w-4 text-primary" />
+        <Card className="p-6 mb-6 shadow-card border-l-4 border-l-primary relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+            <Users className="w-24 h-24" />
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8">
+            <Avatar className="h-24 w-24 border-4 border-background shadow-elegant">
+              {profile.avatar_url ? (
+                <AvatarImage src={profile.avatar_url} alt={profile.full_name} className="object-cover" />
+              ) : null}
+              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl font-bold">
+                {(profile.full_name || email).slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h2 className="text-2xl font-bold">{profile.full_name || "New Student"}</h2>
+                <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{profile.admission_type || "Standard"} Admission</Badge>
+              </div>
+              <p className="text-muted-foreground">{email}</p>
+              <Link to="/app/profile">
+                <Button variant="link" size="sm" className="p-0 h-auto text-primary mt-1">Edit Profile</Button>
+              </Link>
             </div>
-            <h2 className="text-lg font-semibold">My Profile</h2>
-            <Badge variant="outline" className="ml-auto text-[10px] uppercase tracking-wider">{profile.admission_type || "Standard"} Admission</Badge>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Personal</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <div className="h-1 w-4 bg-primary/30 rounded-full" /> Personal
+              </h3>
               <div className="space-y-3">
                 <ProfileItem label="Mobile" value={profile.mobile_number} />
                 <ProfileItem label="WhatsApp" value={profile.whatsapp_number} />
@@ -380,7 +398,9 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Academic & Career</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <div className="h-1 w-4 bg-primary/30 rounded-full" /> Academic & Career
+              </h3>
               <div className="space-y-3">
                 <ProfileItem label="Education" value={profile.education_details} />
                 <ProfileItem label="Designation" value={profile.designation} />
@@ -390,7 +410,9 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Enrollment</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <div className="h-1 w-4 bg-primary/30 rounded-full" /> Enrollment
+              </h3>
               <div className="space-y-3">
                 <ProfileItem label="Joining Date" value={profile.joining_date ? new Date(profile.joining_date).toLocaleDateString() : null} />
                 <ProfileItem label="Batch Month" value={myBatches[0]?.month || "Not Assigned"} className="text-primary font-semibold" />

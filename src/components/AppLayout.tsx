@@ -1,15 +1,16 @@
 import { Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard, Users, BookOpen, Video, Calendar, MessageSquare,
-  GraduationCap, LogOut, Shield, FileText, Menu
+  GraduationCap, LogOut, Shield, FileText, Menu, UserCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles: ("superadmin"|"admin"|"teacher"|"student")[] };
 
@@ -19,6 +20,7 @@ const NAV: NavItem[] = [
   { to: "/app/users", label: "Users", icon: Users, roles: ["superadmin","admin"] },
   { to: "/app/invoices", label: "Invoices", icon: FileText, roles: ["superadmin","admin"] },
   { to: "/app/roles", label: "Roles", icon: Shield, roles: ["superadmin"] },
+  { to: "/app/profile", label: "Profile", icon: UserCircle, roles: ["superadmin","admin","teacher","student"] },
 ];
 
 export function AppLayout() {
@@ -26,6 +28,20 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+        });
+    }
+  }, [user]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
@@ -74,11 +90,16 @@ export function AppLayout() {
 
       <div className="p-3 border-t border-sidebar-border">
         <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/30">
-          <Avatar className="h-9 w-9"><AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback></Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{user.email}</div>
-            <Badge variant="secondary" className="text-[10px] h-4 mt-0.5 capitalize">{primaryRole}</Badge>
-          </div>
+          <Link to="/app/profile" className="flex items-center gap-3 flex-1 min-w-0" onClick={() => setOpen(false)}>
+            <Avatar className="h-9 w-9">
+              {avatarUrl ? <AvatarImage src={avatarUrl} className="object-cover" /> : null}
+              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium truncate">{user.email}</div>
+              <Badge variant="secondary" className="text-[10px] h-4 mt-0.5 capitalize">{primaryRole}</Badge>
+            </div>
+          </Link>
           <Button size="icon" variant="ghost" onClick={() => { signOut(); navigate({ to: "/" }); }} className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
             <LogOut className="h-4 w-4" />
           </Button>
@@ -149,3 +170,4 @@ export const BatchSubNav = ({ batchId }: { batchId: string }) => {
     </div>
   );
 };
+
