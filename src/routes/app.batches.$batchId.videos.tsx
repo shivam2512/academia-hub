@@ -245,15 +245,23 @@ function VideosPage() {
               const vimeoId = getVimeoId(v.video_url);
               return (
                 <Card key={v.id} className="overflow-hidden shadow-card hover:shadow-elegant transition-all">
-                  <div className={cn(
-                    "aspect-video bg-black relative overflow-hidden group video-wrapper transition-all duration-300",
-                    fullscreenId === v.id && "fixed inset-0 z-[9999] w-screen h-screen aspect-auto flex items-center justify-center"
-                  )}>
-                    {/* Anti-click shields */}
-                    <div className="absolute top-0 left-0 w-full h-[15%] min-h-[60px] z-10" title="Protected video" onContextMenu={(e) => e.preventDefault()} />
-                    <div className="absolute bottom-0 left-0 w-[20%] max-w-[200px] h-[15%] min-h-[80px] z-10" title="Protected video" onContextMenu={(e) => e.preventDefault()} />
-                    <div className="absolute bottom-0 right-0 w-[25%] max-w-[250px] h-[15%] min-h-[80px] z-10" title="Protected video" onContextMenu={(e) => e.preventDefault()} />
+                  <div 
+                    className={cn(
+                      "aspect-video bg-black relative overflow-hidden group video-wrapper transition-all duration-300",
+                      fullscreenId === v.id && "fixed inset-0 z-[9999] w-screen h-screen aspect-auto flex items-center justify-center"
+                    )}
+                    onContextMenu={(e) => e.preventDefault()}
+                  >
+                    {/* Anti-click shields to hide UI elements that reveal URL */}
+                    <div className="absolute top-0 left-0 w-full h-[15%] min-h-[60px] z-10 bg-transparent" title="Protected video" />
+                    <div className="absolute bottom-0 left-0 w-[20%] max-w-[200px] h-[15%] min-h-[80px] z-10 bg-transparent" title="Protected video" />
+                    <div className="absolute bottom-0 right-0 w-[25%] max-w-[250px] h-[15%] min-h-[80px] z-10 bg-transparent" title="Protected video" />
                     
+                    {/* Floating Protection Badge */}
+                    <div className="absolute top-2 left-2 z-20 pointer-events-none opacity-40">
+                      <Badge variant="outline" className="bg-black/50 text-[10px] text-white border-white/20">DBS IT SECURE</Badge>
+                    </div>
+
                     {(ytId || vimeoId) && (
                       <button 
                         onClick={(e) => toggleFullscreen(v.id, e)} 
@@ -269,8 +277,8 @@ function VideosPage() {
 
                     {ytId ? (
                       <iframe 
-                        src={`https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0&showinfo=0&controls=1&disablekb=1&fs=1`} 
-                        className={cn("w-full h-full", fullscreenId === v.id && "max-h-full max-w-full aspect-video shadow-2xl")} 
+                        src={`https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0&showinfo=0&controls=1&disablekb=1&fs=1&iv_load_policy=3`} 
+                        className={cn("w-full h-full pointer-events-auto", fullscreenId === v.id && "max-h-full max-w-full aspect-video shadow-2xl")} 
                         title={v.title} 
                         sandbox="allow-scripts allow-same-origin allow-presentation" 
                         allowFullScreen
@@ -283,10 +291,18 @@ function VideosPage() {
                         sandbox="allow-scripts allow-same-origin allow-presentation" 
                         allowFullScreen
                       />
-                    ) : isAdmin || v.uploaded_by === user?.id ? (
+                    ) : (isAdmin || v.uploaded_by === user?.id) ? (
                       <a href={v.video_url} target="_blank" rel="noreferrer" className="flex items-center justify-center w-full h-full bg-gradient-primary text-primary-foreground hover:opacity-90">
                         <div className="text-center"><Video className="h-10 w-10 mx-auto mb-2" /><div className="text-sm">Open video</div></div>
                       </a>
+                    ) : v.video_url?.match(/\.(mp4|webm|ogg)$/i) ? (
+                      <video 
+                        src={v.video_url} 
+                        controls 
+                        controlsList="nodownload" 
+                        onContextMenu={(e) => e.preventDefault()}
+                        className="w-full h-full"
+                      />
                     ) : (
                       <div className="flex items-center justify-center w-full h-full bg-slate-900 text-slate-400">
                         <div className="text-center"><Video className="h-10 w-10 mx-auto mb-2 opacity-50" /><div className="text-sm">Video cannot be embedded</div></div>
