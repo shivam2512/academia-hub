@@ -110,3 +110,71 @@ export const deleteUser = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+const updateUserSchema = z.object({
+  id: z.string().uuid(),
+  full_name: z.string().trim().min(2).max(100),
+  role: z.enum(["superadmin", "admin", "teacher", "student"]),
+  mobile_number: z.string().optional().nullable(),
+  whatsapp_number: z.string().optional().nullable(),
+  joining_date: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  education_details: z.string().optional().nullable(),
+  designation: z.string().optional().nullable(),
+  experience_type: z.string().optional().nullable(),
+  current_package: z.string().optional().nullable(),
+  admission_type: z.string().optional().nullable(),
+  eligible_for_pp: z.boolean().optional(),
+});
+
+export const updateUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => updateUserSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    // Verify caller is admin or superadmin
+    const { data: callerRoles, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (roleErr) throw new Error(roleErr.message);
+    const isAdmin = (callerRoles ?? []).some((r) => ["admin", "superadmin"].includes(r.role));
+    if (!isAdmin) throw new Error("Only admins can update users");
+
+    // Update profile
+    const { error: profileErr } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        full_name: data.full_name,
+        mobile_number: data.mobile_number,
+        whatsapp_number: data.whatsapp_number,
+        joining_date: data.joining_date,
+        city: data.city,
+        state: data.state,
+        education_details: data.education_details,
+        designation: data.designation,
+        experience_type: data.experience_type,
+        current_package: data.current_package,
+        admission_type: data.admission_type,
+        eligible_for_pp: data.eligible_for_pp,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.id);
+    if (profileErr) throw new Error(profileErr.message);
+
+    // Update role
+    const { error: deleteRoleErr } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.id);
+    if (deleteRoleErr) throw new Error(deleteRoleErr.message);
+
+    const { error: insertRoleErr } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: data.id, role: data.role });
+    if (insertRoleErr) throw new Error(insertRoleErr.message);
+
+    return { success: true };
+  });

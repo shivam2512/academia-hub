@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Users, UserPlus, Lock, Plus, Trash2, Search } from "lucide-react";
+import { Users, UserPlus, Lock, Plus, Trash2, Search, Edit } from "lucide-react";
 import { toast } from "sonner";
-import { createUser, deleteUser } from "@/actions/users";
+import { createUser, deleteUser, updateUser } from "@/actions/users";
 
 export const Route = createFileRoute("/app/users")({ component: UsersPage });
 
@@ -30,6 +30,9 @@ function UsersPage() {
   const [batches, setBatches] = useState<any[]>([]);
   const [memberships, setMemberships] = useState<Record<string, any[]>>({});
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [updating, setUpdating] = useState(false);
 
   const load = async () => {
     const [u, r, b, m] = await Promise.all([
@@ -90,7 +93,6 @@ function UsersPage() {
       email: String(fd.get("email") || "").trim(),
       password: String(fd.get("password") || ""),
       role: newRole,
-      // Profile fields
       mobile_number: String(fd.get("mobile_number") || "").trim(),
       whatsapp_number: String(fd.get("whatsapp_number") || "").trim(),
       joining_date: String(fd.get("joining_date") || "").trim(),
@@ -124,6 +126,46 @@ function UsersPage() {
       toast.error(err?.message ?? "Failed to create user");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    const fd = new FormData(e.currentTarget);
+    const payload = {
+      id: editingUser.id,
+      full_name: String(fd.get("full_name") || "").trim(),
+      role: (fd.get("role") as AppRole) || "student",
+      mobile_number: String(fd.get("mobile_number") || "").trim(),
+      whatsapp_number: String(fd.get("whatsapp_number") || "").trim(),
+      joining_date: String(fd.get("joining_date") || "").trim(),
+      city: String(fd.get("city") || "").trim(),
+      state: String(fd.get("state") || "").trim(),
+      education_details: String(fd.get("education_details") || "").trim(),
+      designation: String(fd.get("designation") || "").trim(),
+      experience_type: String(fd.get("experience_type") || ""),
+      current_package: String(fd.get("current_package") || "").trim(),
+      admission_type: String(fd.get("admission_type") || ""),
+      eligible_for_pp: fd.get("eligible_for_pp") === "true",
+    };
+    
+    setUpdating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not signed in");
+      await updateUser({
+        data: payload,
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      toast.success("User updated");
+      setEditOpen(false);
+      setEditingUser(null);
+      load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to update user");
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -230,6 +272,89 @@ function UsersPage() {
           </Dialog>
         )}
       />
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Edit User: {editingUser?.email}</DialogTitle></DialogHeader>
+          {editingUser && (
+            <form onSubmit={handleUpdate} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Account Info</h3>
+                  <div><Label>Full name</Label><Input name="full_name" defaultValue={editingUser.full_name} required /></div>
+                  <div>
+                    <Label>Role</Label>
+                    <Select name="role" defaultValue={roles[editingUser.id]?.[0] || "student"}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">Student</SelectItem>
+                        <SelectItem value="teacher">Teacher</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="superadmin">Superadmin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Personal Details</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><Label>Mobile No</Label><Input name="mobile_number" defaultValue={editingUser.mobile_number} placeholder="Mobile" /></div>
+                    <div><Label>WhatsApp No</Label><Input name="whatsapp_number" defaultValue={editingUser.whatsapp_number} placeholder="WhatsApp" /></div>
+                  </div>
+                  <div><Label>Joining Date</Label><Input name="joining_date" type="date" defaultValue={editingUser.joining_date} /></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><Label>City</Label><Input name="city" defaultValue={editingUser.city} placeholder="City" /></div>
+                    <div><Label>State</Label><Input name="state" defaultValue={editingUser.state} placeholder="State" /></div>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <input type="hidden" name="eligible_for_pp" value={String(editingUser.eligible_for_pp)} />
+                    <Checkbox 
+                      id="edit-pp" 
+                      defaultChecked={editingUser.eligible_for_pp} 
+                      onCheckedChange={(v) => setEditingUser({...editingUser, eligible_for_pp: !!v})} 
+                    />
+                    <Label htmlFor="edit-pp" className="text-xs font-medium cursor-pointer">Eligible for PP Sessions</Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Education & Career</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><Label>Education Details</Label><Input name="education_details" defaultValue={editingUser.education_details} placeholder="Degree, College, etc." /></div>
+                  <div><Label>Designation</Label><Input name="designation" defaultValue={editingUser.designation} placeholder="Job Title" /></div>
+                  <div>
+                    <Label>Candidate Type</Label>
+                    <Select name="experience_type" defaultValue={editingUser.experience_type || "fresher"}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fresher">Fresher</SelectItem>
+                        <SelectItem value="experienced">Experienced</SelectItem>
+                        <SelectItem value="buy_experience">Buy Experience</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>Current Package</Label><Input name="current_package" defaultValue={editingUser.current_package} placeholder="e.g. 5 LPA" /></div>
+                  <div>
+                    <Label>Admission Type</Label>
+                    <Select name="admission_type" defaultValue={editingUser.admission_type || "inhouse"}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inhouse">Inhouse</SelectItem>
+                        <SelectItem value="reference">Reference</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter><Button type="submit" className="w-full md:w-auto bg-gradient-primary text-primary-foreground" disabled={updating}>{updating ? "Updating…" : "Update user"}</Button></DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Card className="shadow-card overflow-hidden">
         <div className="p-4 bg-muted/30 border-b flex items-center gap-4">
           <div className="relative flex-1 max-w-sm">
@@ -255,7 +380,10 @@ function UsersPage() {
             return (
               <div key={u.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
                 <div className="flex items-center gap-4 flex-1">
-                  <Avatar><AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">{(u.full_name || u.email || "U").slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
+                  <Avatar>
+                    {u.avatar_url ? <AvatarImage src={u.avatar_url} className="object-cover" /> : null}
+                    <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">{(u.full_name || u.email || "U").slice(0,2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
                   <div className="min-w-0">
                     <div className="font-bold sm:font-medium truncate">{u.full_name || "—"}</div>
                     <div className="text-xs text-muted-foreground truncate">{u.email}</div>
@@ -266,6 +394,10 @@ function UsersPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 justify-end sm:justify-start">
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setEditingUser(u); setEditOpen(true); }}>
+                    <Edit className="h-3.5 w-3.5 mr-2" />Edit
+                  </Button>
+
                   <Dialog open={isOpen} onOpenChange={(o) => setAssignOpen(o ? u.id : null)}>
                     <DialogTrigger asChild><Button variant="outline" size="sm" className="h-8 text-xs flex-1 sm:flex-none"><UserPlus className="h-3.5 w-3.5 mr-2" />Batches</Button></DialogTrigger>
                     <DialogContent className="max-w-[95vw] sm:max-w-md">
