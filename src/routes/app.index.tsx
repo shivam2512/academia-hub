@@ -416,7 +416,7 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
               </h3>
               <div className="space-y-3">
                 <ProfileItem label="Joining Date" value={profile.joining_date ? new Date(profile.joining_date).toLocaleDateString() : null} />
-                <ProfileItem label="Batch Month" value={myBatches[0]?.month || "Not Assigned"} className="text-primary font-semibold" />
+                <ProfileItem label="Batch Month" value={myBatches.map(b => b.month).filter(Boolean).join(", ") || "Not Assigned"} className="text-primary font-semibold" />
                 <ProfileItem label="PP Eligible" value={profile.eligible_for_pp ? "Yes" : "No"} />
               </div>
             </div>

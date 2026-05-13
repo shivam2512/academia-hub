@@ -26,6 +26,7 @@ const batchSchema = z.object({
   name: z.string().trim().min(2).max(100),
   subject: z.string().trim().max(100).optional(),
   description: z.string().trim().max(1000).optional(),
+  month: z.string().trim().max(100).optional(),
 });
 
 function BatchesList() {
@@ -45,7 +46,12 @@ function BatchesList() {
   const create = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const parsed = batchSchema.safeParse({ name: fd.get("name"), subject: fd.get("subject"), description: fd.get("description") });
+    const parsed = batchSchema.safeParse({ 
+      name: fd.get("name"), 
+      subject: fd.get("subject"), 
+      description: fd.get("description"),
+      month: fd.get("month")
+    });
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setBusy(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -58,7 +64,12 @@ function BatchesList() {
   const update = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const parsed = batchSchema.safeParse({ name: fd.get("name"), subject: fd.get("subject"), description: fd.get("description") });
+    const parsed = batchSchema.safeParse({ 
+      name: fd.get("name"), 
+      subject: fd.get("subject"), 
+      description: fd.get("description"),
+      month: fd.get("month")
+    });
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setBusy(true);
     const { error } = await supabase.from("batches").update(parsed.data).eq("id", editingBatch.id);
@@ -88,6 +99,7 @@ function BatchesList() {
               <DialogHeader><DialogTitle>Create batch</DialogTitle></DialogHeader>
               <form onSubmit={create} className="space-y-4">
                 <div><Label htmlFor="name">Name</Label><Input id="name" name="name" required placeholder="JEE Mains 2026 — Morning" /></div>
+                <div><Label htmlFor="month">Batch Month</Label><Input id="month" name="month" placeholder="e.g. October 2026" /></div>
                 <div><Label htmlFor="subject">Subject</Label><Input id="subject" name="subject" placeholder="Physics, Chemistry, Math" /></div>
                 <div><Label htmlFor="description">Description</Label><Textarea id="description" name="description" rows={3} /></div>
                 <DialogFooter><Button type="submit" disabled={busy}>{busy ? "Creating…" : "Create"}</Button></DialogFooter>
@@ -103,6 +115,7 @@ function BatchesList() {
           {editingBatch && (
             <form onSubmit={update} className="space-y-4">
               <div><Label htmlFor="edit-name">Name</Label><Input id="edit-name" name="name" defaultValue={editingBatch.name} required /></div>
+              <div><Label htmlFor="edit-month">Batch Month</Label><Input id="edit-month" name="month" defaultValue={editingBatch.month ?? ""} placeholder="e.g. October 2026" /></div>
               <div><Label htmlFor="edit-subject">Subject</Label><Input id="edit-subject" name="subject" defaultValue={editingBatch.subject ?? ""} /></div>
               <div><Label htmlFor="edit-description">Description</Label><Textarea id="edit-description" name="description" defaultValue={editingBatch.description ?? ""} rows={3} /></div>
               <DialogFooter><Button type="submit" disabled={busy}>{busy ? "Updating…" : "Update"}</Button></DialogFooter>
