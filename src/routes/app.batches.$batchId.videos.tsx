@@ -278,7 +278,8 @@ function VideosPage() {
 
                     {ytId ? (
                       <iframe 
-                        src={`https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0&showinfo=0&controls=1&disablekb=1&fs=0&iv_load_policy=3`} 
+                        id={`yt-player-${v.id}`}
+                        src={`https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0&showinfo=0&controls=1&disablekb=1&fs=0&iv_load_policy=3&enablejsapi=1`} 
                         className={cn("w-full h-full pointer-events-auto", fullscreenId === v.id && "max-h-full max-w-full aspect-video shadow-2xl")} 
                         title={v.title} 
                         sandbox="allow-scripts allow-same-origin allow-presentation" 
@@ -298,6 +299,7 @@ function VideosPage() {
                       </a>
                     ) : v.video_url?.match(/\.(mp4|webm|ogg)$/i) ? (
                       <video 
+                        id={`native-player-${v.id}`}
                         src={v.video_url} 
                         controls 
                         controlsList="nodownload" 
@@ -312,7 +314,30 @@ function VideosPage() {
                   </div>
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold flex-1">{v.title}</h3>
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{v.title}</h3>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">Speed:</span>
+                          {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
+                            <button
+                              key={speed}
+                              onClick={() => {
+                                const yt = document.getElementById(`yt-player-${v.id}`) as HTMLIFrameElement;
+                                if (yt) {
+                                  yt.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'setPlaybackRate', args: [speed] }), '*');
+                                }
+                                const native = document.getElementById(`native-player-${v.id}`) as HTMLVideoElement;
+                                if (native) {
+                                  native.playbackRate = speed;
+                                }
+                              }}
+                              className="px-1.5 py-0.5 rounded border text-[10px] font-medium hover:bg-primary hover:text-white transition-colors"
+                            >
+                              {speed}x
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       {(v.uploaded_by === user?.id || isAdmin) && (
                         <Button size="icon" variant="ghost" onClick={() => remove(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       )}
