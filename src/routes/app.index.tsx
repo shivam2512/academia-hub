@@ -424,21 +424,6 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
             </div>
           )}
         </Card>
-      </div>
-    </div>
-  );
-}
-
-function ProfileItem({ label, value, className }: { label: string; value: string | null; className?: string }) {
-  return (
-    <div>
-      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
-      <div className={cn("text-sm font-medium", !value && "text-muted-foreground italic", className)}>
-        {value || "Not provided"}
-      </div>
-    </div>
-  );
-}
 
         <Card className="p-6 shadow-card">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> Latest notes</h2>
@@ -471,6 +456,17 @@ function ProfileItem({ label, value, className }: { label: string; value: string
             </div>
           )}
         </Card>
+      </div>
+    </div>
+  );
+}
+
+function ProfileItem({ label, value, className }: { label: string; value: string | null; className?: string }) {
+  return (
+    <div>
+      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className={cn("text-sm font-medium", !value && "text-muted-foreground italic", className)}>
+        {value || "Not provided"}
       </div>
     </div>
   );
