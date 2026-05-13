@@ -252,6 +252,7 @@ function VideosPage() {
                       fullscreenId === v.id && "fixed inset-0 z-[9999] w-screen h-screen aspect-auto flex items-center justify-center"
                     )}
                     onContextMenu={(e) => e.preventDefault()}
+                    style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as any}
                   >
                     {/* Anti-click shields to hide UI elements that reveal URL */}
                     <div className="absolute top-0 left-0 w-full h-[15%] min-h-[60px] z-10 bg-transparent" title="Protected video" />
@@ -316,8 +317,8 @@ function VideosPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <h3 className="font-semibold">{v.title}</h3>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">Speed:</span>
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter mr-1">Speed:</span>
                           {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
                             <button
                               key={speed}
