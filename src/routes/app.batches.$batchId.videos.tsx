@@ -267,7 +267,7 @@ function VideosPage() {
                       <button 
                         onClick={(e) => toggleFullscreen(v.id, e)} 
                         className={cn(
-                          "absolute top-4 right-4 z-20 p-2 bg-black/60 text-white rounded-md transition-all hover:bg-black/80",
+                          "absolute top-4 right-14 z-20 p-2 bg-black/60 text-white rounded-md transition-all hover:bg-black/80",
                           fullscreenId === v.id ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
                         )}
                         title={fullscreenId === v.id ? "Close Fullscreen" : "Toggle Fullscreen"}
