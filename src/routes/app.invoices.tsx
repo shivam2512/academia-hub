@@ -47,6 +47,11 @@ function InvoicesPage() {
   const [paidAmount, setPaidAmount] = useState(0);
   const [emiOpted, setEmiOpted] = useState(false);
   const [emis, setEmis] = useState<any[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState("self");
+  const [bajajDownPayment, setBajajDownPayment] = useState(0);
+  const [bajajLanNo, setBajajLanNo] = useState("");
+  const [selfPaymentType, setSelfPaymentType] = useState("upi");
+  const [merchantPaymentType, setMerchantPaymentType] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -55,7 +60,7 @@ function InvoicesPage() {
     // Fetch invoices
     const { data: invs } = await supabase.from("student_invoices").select("*");
     
-    const invMap: Record<string, Invoice> = {};
+    const invMap: Record<string, Invoice | any> = {};
     (invs ?? []).forEach(i => { invMap[i.user_id] = i; });
 
     const merged = (profs ?? []).map(p => ({
@@ -69,12 +74,17 @@ function InvoicesPage() {
 
   useEffect(() => { load(); }, []);
 
-  const openEditor = (s: Student) => {
+  const openEditor = (s: Student | any) => {
     setEditingStudent(s);
     setTotalFee(s.invoice?.total_fee ?? 0);
     setPaidAmount(s.invoice?.paid_amount ?? 0);
     setEmiOpted(s.invoice?.emi_opted ?? false);
     setEmis(s.invoice?.emi_details ?? []);
+    setPaymentMethod(s.invoice?.payment_method ?? "self");
+    setBajajDownPayment(s.invoice?.bajaj_down_payment ?? 0);
+    setBajajLanNo(s.invoice?.bajaj_lan_no ?? "");
+    setSelfPaymentType(s.invoice?.self_payment_type ?? "upi");
+    setMerchantPaymentType(s.invoice?.merchant_payment_type ?? "");
   };
 
   const addEmi = () => {
@@ -106,7 +116,12 @@ function InvoicesPage() {
       paid_amount: paidAmount,
       emi_opted: emiOpted,
       emi_details: emis,
-      status
+      status,
+      payment_method: paymentMethod,
+      bajaj_down_payment: bajajDownPayment,
+      bajaj_lan_no: bajajLanNo,
+      self_payment_type: selfPaymentType,
+      merchant_payment_type: merchantPaymentType
     };
 
     const { error } = await supabase.from("student_invoices").upsert(payload, { onConflict: "user_id" });
@@ -144,7 +159,7 @@ function InvoicesPage() {
           </div>
         </div>
         
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted/50 text-left">
@@ -209,6 +224,72 @@ function InvoicesPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden divide-y">
+          {loading ? (
+            <div className="p-12 text-center text-muted-foreground">Loading invoice data...</div>
+          ) : filtered.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground">No students found.</div>
+          ) : filtered.map(s => {
+            const pending = (s.invoice?.total_fee ?? 0) - (s.invoice?.paid_amount ?? 0);
+            return (
+              <div key={s.id} className="p-4 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-bold text-base">{s.full_name || "N/A"}</div>
+                    <div className="text-xs text-muted-foreground">{s.email}</div>
+                  </div>
+                  <Badge className={cn(
+                    s.invoice?.status === "fully_paid" ? "bg-emerald-500" :
+                    s.invoice?.status === "partially_paid" ? "bg-amber-500" :
+                    "bg-slate-500"
+                  )}>
+                    {s.invoice?.status?.replace("_", " ") ?? "Unpaid"}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 py-2 border-y border-dashed">
+                  <div>
+                    <div className="text-[10px] uppercase text-muted-foreground font-semibold">Total Fee</div>
+                    <div className="font-mono font-bold text-sm">₹{s.invoice?.total_fee?.toLocaleString() ?? "0"}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase text-muted-foreground font-semibold">Paid</div>
+                    <div className="font-mono font-bold text-sm text-emerald-600">₹{s.invoice?.paid_amount?.toLocaleString() ?? "0"}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase text-muted-foreground font-semibold">Pending</div>
+                    <div className="font-mono font-bold text-sm text-destructive">₹{pending.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase text-muted-foreground font-semibold">EMI</div>
+                    <div>{s.invoice?.emi_opted ? <Badge variant="outline" className="h-4 text-[10px] border-blue-500 text-blue-600">Opted</Badge> : <span className="text-xs text-muted-foreground">—</span>}</div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1 text-primary border-primary"
+                    onClick={() => generateReceipt({
+                      studentName: s.full_name || "Student",
+                      studentEmail: s.email || "",
+                      totalFee: s.invoice?.total_fee ?? 0,
+                      paidAmount: s.invoice?.paid_amount ?? 0,
+                      paymentDate: new Date().toLocaleDateString(),
+                      status: s.invoice?.status ?? "unpaid"
+                    })}
+                  >
+                    <Download className="h-4 w-4 mr-2" /> Receipt
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => openEditor(s)}>Manage</Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </Card>
 
       <Dialog open={!!editingStudent} onOpenChange={o => !o && setEditingStudent(null)}>
@@ -233,6 +314,55 @@ function InvoicesPage() {
                   <Input type="number" value={paidAmount} onChange={e => setPaidAmount(Number(e.target.value))} className="pl-9" />
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Payment Method</h3>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bajaj">Bajaj Finance</SelectItem>
+                  <SelectItem value="self">Self (Cash/UPI)</SelectItem>
+                  <SelectItem value="merchant">Merchant (Cards/Netbanking)</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {paymentMethod === "bajaj" && (
+                <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-2">
+                    <Label>Down Payment (₹)</Label>
+                    <Input type="number" value={bajajDownPayment} onChange={e => setBajajDownPayment(Number(e.target.value))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bajaj LAN No</Label>
+                    <Input value={bajajLanNo} onChange={e => setBajajLanNo(e.target.value)} placeholder="e.g. LAN123456" />
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === "self" && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                  <Label>Payment Type</Label>
+                  <Select value={selfPaymentType} onValueChange={setSelfPaymentType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {paymentMethod === "merchant" && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                  <Label>Merchant Details</Label>
+                  <Input 
+                    value={merchantPaymentType} 
+                    onChange={e => setMerchantPaymentType(e.target.value)} 
+                    placeholder="e.g. Credit Card, NEFT, RTGS" 
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-2 border p-3 rounded-lg bg-muted/30">

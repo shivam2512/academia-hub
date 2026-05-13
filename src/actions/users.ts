@@ -8,6 +8,17 @@ const createUserSchema = z.object({
   password: z.string().min(6).max(100),
   full_name: z.string().trim().min(2).max(100),
   role: z.enum(["superadmin", "admin", "teacher", "student"]),
+  mobile_number: z.string().optional(),
+  whatsapp_number: z.string().optional(),
+  joining_date: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  education_details: z.string().optional(),
+  designation: z.string().optional(),
+  experience_type: z.string().optional(),
+  current_package: z.string().optional(),
+  admission_type: z.string().optional(),
+  eligible_for_pp: z.boolean().optional(),
 });
 
 export const createUser = createServerFn({ method: "POST" })
@@ -43,7 +54,22 @@ export const createUser = createServerFn({ method: "POST" })
 
     // Ensure a profile row exists (in case the handle_new_user trigger didn't run)
     await supabaseAdmin.from("profiles").upsert(
-      { id: newUserId, email: data.email, full_name: data.full_name },
+      { 
+        id: newUserId, 
+        email: data.email, 
+        full_name: data.full_name,
+        mobile_number: data.mobile_number,
+        whatsapp_number: data.whatsapp_number,
+        joining_date: data.joining_date,
+        city: data.city,
+        state: data.state,
+        education_details: data.education_details,
+        designation: data.designation,
+        experience_type: data.experience_type,
+        current_package: data.current_package,
+        admission_type: data.admission_type,
+        eligible_for_pp: data.eligible_for_pp,
+      },
       { onConflict: "id" }
     );
 

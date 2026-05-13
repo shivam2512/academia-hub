@@ -65,10 +65,23 @@ function VideosPage() {
   const load = async () => {
     const { data: videosData } = await supabase.from("video_recordings").select("*").eq("batch_id", batchId).order("created_at", { ascending: false });
     const { data: foldersData } = await supabase.from("video_folders").select("*").eq("batch_id", batchId).order("created_at", { ascending: true });
+    
+    // Check eligibility if student
+    let eligible = true;
+    if (user && !isAdmin && !hasAnyRole(["teacher"])) {
+      const { data: prof } = await supabase.from("profiles").select("eligible_for_pp").eq("id", user.id).single();
+      eligible = !!prof?.eligible_for_pp;
+    }
+
     setVideos(videosData ?? []);
-    setFolders(foldersData ?? []);
+    
+    if (!eligible) {
+      setFolders((foldersData ?? []).filter(f => f.name !== "PP Session"));
+    } else {
+      setFolders(foldersData ?? []);
+    }
   };
-  useEffect(() => { load(); }, [batchId]);
+  useEffect(() => { load(); }, [batchId, user?.id]);
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

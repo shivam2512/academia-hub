@@ -233,23 +233,25 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
   const [recentNotes, setRecentNotes] = useState<any[]>([]);
   const [recentVideos, setRecentVideos] = useState<any[]>([]);
   const [invoice, setInvoice] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     (async () => {
       const { data: memberships } = await supabase
         .from("batch_members")
-        .select("batch_id, batches(id, name, subject)")
+        .select("batch_id, batches(id, name, subject, month)")
         .eq("user_id", userId);
       const batches = (memberships ?? []).map((m: any) => m.batches).filter(Boolean);
       setMyBatches(batches);
       const ids = batches.map((b: any) => b.id);
       
       const nowIso = new Date().toISOString();
-      const [up, n, v, inv] = await Promise.all([
+      const [up, n, v, inv, prof] = await Promise.all([
         ids.length ? supabase.from("live_classes").select("id, title, scheduled_at, duration_minutes, meeting_url, batch_id, batches(name)").in("batch_id", ids).gte("scheduled_at", nowIso).order("scheduled_at").limit(5) : Promise.resolve({ data: [] }),
         ids.length ? supabase.from("notes").select("id, title, batch_id, created_at, batches(name)").in("batch_id", ids).order("created_at", { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
         ids.length ? supabase.from("video_recordings").select("id, title, batch_id, created_at, batches(name)").in("batch_id", ids).order("created_at", { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
-        supabase.from("student_invoices").select("*").eq("user_id", userId).single(),
+        supabase.from("student_invoices").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("profiles").select("*").eq("id", userId).single(),
       ]);
 
       const list = up.data ?? [];
@@ -258,6 +260,7 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
       setRecentNotes(n.data ?? []);
       setRecentVideos(v.data ?? []);
       setInvoice(inv.data);
+      setProfile(prof.data);
     })();
   }, [userId]);
 
@@ -338,12 +341,14 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
                 size="sm" 
                 className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white"
                 onClick={() => generateReceipt({
-                  studentName: email.split("@")[0], // Fallback if name not in profile state yet
+                  studentName: profile?.full_name || email.split("@")[0],
                   studentEmail: email,
                   totalFee: Number(invoice.total_fee),
                   paidAmount: Number(invoice.paid_amount),
                   paymentDate: new Date().toLocaleDateString(),
-                  status: invoice.status
+                  status: invoice.status,
+                  paymentMethod: invoice.payment_method,
+                  paymentDetails: invoice.payment_method === "bajaj" ? invoice.bajaj_lan_no : invoice.payment_method === "self" ? invoice.self_payment_type : invoice.merchant_payment_type
                 })}
               >
                 <Download className="h-4 w-4 mr-2" /> Download Receipt
@@ -352,6 +357,49 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
           )}
         </Card>
       </div>
+
+      {profile && (
+        <Card className="p-6 mb-6 shadow-card border-l-4 border-l-primary">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-primary" />
+            </div>
+            <h2 className="text-lg font-semibold">My Profile</h2>
+            <Badge variant="outline" className="ml-auto text-[10px] uppercase tracking-wider">{profile.admission_type || "Standard"} Admission</Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Personal</h3>
+              <div className="space-y-3">
+                <ProfileItem label="Mobile" value={profile.mobile_number} />
+                <ProfileItem label="WhatsApp" value={profile.whatsapp_number} />
+                <ProfileItem label="City" value={profile.city} />
+                <ProfileItem label="State" value={profile.state} />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Academic & Career</h3>
+              <div className="space-y-3">
+                <ProfileItem label="Education" value={profile.education_details} />
+                <ProfileItem label="Designation" value={profile.designation} />
+                <ProfileItem label="Experience" value={profile.experience_type?.replace("_", " ")} className="capitalize" />
+                <ProfileItem label="Current PKG" value={profile.current_package} />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Enrollment</h3>
+              <div className="space-y-3">
+                <ProfileItem label="Joining Date" value={profile.joining_date ? new Date(profile.joining_date).toLocaleDateString() : null} />
+                <ProfileItem label="Batch Month" value={myBatches[0]?.month || "Not Assigned"} className="text-primary font-semibold" />
+                <ProfileItem label="PP Eligible" value={profile.eligible_for_pp ? "Yes" : "No"} />
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatTile icon={BookOpen} label="Enrolled batches" value={myBatches.length} color="from-violet-500 to-fuchsia-500" />
@@ -376,6 +424,21 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
             </div>
           )}
         </Card>
+      </div>
+    </div>
+  );
+}
+
+function ProfileItem({ label, value, className }: { label: string; value: string | null; className?: string }) {
+  return (
+    <div>
+      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className={cn("text-sm font-medium", !value && "text-muted-foreground italic", className)}>
+        {value || "Not provided"}
+      </div>
+    </div>
+  );
+}
 
         <Card className="p-6 shadow-card">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> Latest notes</h2>

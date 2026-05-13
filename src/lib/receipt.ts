@@ -9,12 +9,14 @@ interface ReceiptData {
   paidAmount: number;
   paymentDate: string;
   status: string;
+  paymentMethod?: string;
+  paymentDetails?: string;
 }
 
 export const generateReceipt = (data: ReceiptData) => {
   try {
     const doc = new jsPDF();
-    const { studentName, studentEmail, totalFee, paidAmount, paymentDate, status } = data;
+    const { studentName, studentEmail, totalFee, paidAmount, paymentDate, status, paymentMethod, paymentDetails } = data;
     const pendingAmount = totalFee - paidAmount;
 
     // Header
@@ -46,14 +48,23 @@ export const generateReceipt = (data: ReceiptData) => {
     doc.text(status.replace("_", " ").toUpperCase(), 140, 69);
     doc.setTextColor(0);
 
+    // Table body preparation
+    const tableBody = [
+      ['Course Fee (Total)', `INR ${totalFee.toLocaleString()}`],
+      ['Total Amount Paid', `INR ${paidAmount.toLocaleString()}`],
+    ];
+
+    if (paymentMethod) {
+      let methodText = paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1);
+      if (paymentDetails) methodText += ` (${paymentDetails})`;
+      tableBody.push(['Payment Method', methodText]);
+    }
+
     // Table
     autoTable(doc, {
       startY: 85,
       head: [['Description', 'Amount']],
-      body: [
-        ['Course Fee (Total)', `INR ${totalFee.toLocaleString()}`],
-        ['Total Amount Paid', `INR ${paidAmount.toLocaleString()}`],
-      ],
+      body: tableBody,
       theme: 'grid',
       headStyles: { fillColor: [76, 81, 191] },
       columnStyles: { 1: { halign: 'right' } }

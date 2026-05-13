@@ -26,6 +26,7 @@ function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newRole, setNewRole] = useState<AppRole>("student");
+  const [eligibleForPP, setEligibleForPP] = useState(false);
   const [batches, setBatches] = useState<any[]>([]);
   const [memberships, setMemberships] = useState<Record<string, any[]>>({});
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
@@ -89,6 +90,18 @@ function UsersPage() {
       email: String(fd.get("email") || "").trim(),
       password: String(fd.get("password") || ""),
       role: newRole,
+      // Profile fields
+      mobile_number: String(fd.get("mobile_number") || "").trim(),
+      whatsapp_number: String(fd.get("whatsapp_number") || "").trim(),
+      joining_date: String(fd.get("joining_date") || "").trim(),
+      city: String(fd.get("city") || "").trim(),
+      state: String(fd.get("state") || "").trim(),
+      education_details: String(fd.get("education_details") || "").trim(),
+      designation: String(fd.get("designation") || "").trim(),
+      experience_type: String(fd.get("experience_type") || ""),
+      current_package: String(fd.get("current_package") || "").trim(),
+      admission_type: String(fd.get("admission_type") || ""),
+      eligible_for_pp: eligibleForPP,
     };
     if (payload.full_name.length < 2 || !payload.email || payload.password.length < 6) {
       toast.error("Name, valid email, and password (6+ chars) are required");
@@ -105,6 +118,7 @@ function UsersPage() {
       toast.success("User created");
       setCreateOpen(false);
       setNewRole("student");
+      setEligibleForPP(false);
       load();
     } catch (err: any) {
       toast.error(err?.message ?? "Failed to create user");
@@ -132,26 +146,85 @@ function UsersPage() {
                 <Plus className="h-4 w-4 mr-2" />Add user
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Add a new user</DialogTitle></DialogHeader>
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div><Label htmlFor="nu-name">Full name</Label><Input id="nu-name" name="full_name" required /></div>
-                <div><Label htmlFor="nu-email">Email</Label><Input id="nu-email" name="email" type="email" required /></div>
-                <div><Label htmlFor="nu-password">Temporary password (min 6 chars)</Label><Input id="nu-password" name="password" type="text" required minLength={6} /></div>
-                <div>
-                  <Label>Role</Label>
-                  <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="teacher">Teacher</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="superadmin">Superadmin</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <form onSubmit={handleCreate} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Account Info</h3>
+                    <div><Label htmlFor="nu-name">Full name</Label><Input id="nu-name" name="full_name" required /></div>
+                    <div><Label htmlFor="nu-email">Email</Label><Input id="nu-email" name="email" type="email" required /></div>
+                    <div><Label htmlFor="nu-password">Temporary password (min 6 chars)</Label><Input id="nu-password" name="password" type="text" required minLength={6} /></div>
+                    <div>
+                      <Label>Role</Label>
+                      <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="student">Student</SelectItem>
+                          <SelectItem value="teacher">Teacher</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="superadmin">Superadmin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {newRole === "student" && (
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Personal Details</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><Label>Mobile No</Label><Input name="mobile_number" placeholder="Mobile" /></div>
+                        <div><Label>WhatsApp No</Label><Input name="whatsapp_number" placeholder="WhatsApp" /></div>
+                      </div>
+                      <div><Label>Joining Date</Label><Input name="joining_date" type="date" /></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><Label>City</Label><Input name="city" placeholder="City" /></div>
+                        <div><Label>State</Label><Input name="state" placeholder="State" /></div>
+                      </div>
+                      <div className="flex items-center space-x-2 pt-2">
+                        <Checkbox id="pp" checked={eligibleForPP} onCheckedChange={(v) => setEligibleForPP(!!v)} />
+                        <Label htmlFor="pp" className="text-xs font-medium cursor-pointer">Eligible for PP Sessions</Label>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">Share these credentials with the user. They can change their password after signing in.</p>
-                <DialogFooter><Button type="submit" disabled={creating}>{creating ? "Creating…" : "Create user"}</Button></DialogFooter>
+
+                {newRole === "student" && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Education & Career</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div><Label>Education Details</Label><Input name="education_details" placeholder="Degree, College, etc." /></div>
+                      <div><Label>Designation</Label><Input name="designation" placeholder="Job Title" /></div>
+                      <div>
+                        <Label>Candidate Type</Label>
+                        <Select name="experience_type" defaultValue="fresher">
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fresher">Fresher</SelectItem>
+                            <SelectItem value="experienced">Experienced</SelectItem>
+                            <SelectItem value="buy_experience">Buy Experience</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label>Current Package</Label><Input name="current_package" placeholder="e.g. 5 LPA" /></div>
+                      <div>
+                        <Label>Admission Type</Label>
+                        <Select name="admission_type" defaultValue="inhouse">
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inhouse">Inhouse</SelectItem>
+                            <SelectItem value="reference">Reference</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-4 border-t">
+                  <p className="text-xs text-muted-foreground mb-4">Share these credentials with the user. They can change their password after signing in.</p>
+                  <DialogFooter><Button type="submit" className="w-full md:w-auto bg-gradient-primary text-primary-foreground" disabled={creating}>{creating ? "Creating…" : "Create user"}</Button></DialogFooter>
+                </div>
               </form>
             </DialogContent>
           </Dialog>
@@ -180,29 +253,31 @@ function UsersPage() {
             const userMemberships = memberships[u.id] || [];
             const isOpen = assignOpen === u.id;
             return (
-              <div key={u.id} className="p-4 flex items-center gap-4">
-                <Avatar><AvatarFallback className="bg-gradient-primary text-primary-foreground">{(u.full_name || u.email || "U").slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{u.full_name || "—"}</div>
-                  <div className="text-sm text-muted-foreground truncate">{u.email}</div>
-                  <div className="flex gap-1 mt-1 flex-wrap">
-                    {userRoles.map(r => <Badge key={r} variant="secondary" className="capitalize text-xs">{r}</Badge>)}
-                    {userMemberships.map((m: any) => <Badge key={m.batch_id} variant="outline" className="text-xs">{m.batches?.name} · {m.role}</Badge>)}
+              <div key={u.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-4 flex-1">
+                  <Avatar><AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">{(u.full_name || u.email || "U").slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
+                  <div className="min-w-0">
+                    <div className="font-bold sm:font-medium truncate">{u.full_name || "—"}</div>
+                    <div className="text-xs text-muted-foreground truncate">{u.email}</div>
+                    <div className="flex gap-1 mt-1 flex-wrap">
+                      {userRoles.map(r => <Badge key={r} variant="secondary" className="capitalize text-[10px] h-4">{r}</Badge>)}
+                      {userMemberships.map((m: any) => <Badge key={m.batch_id} variant="outline" className="text-[10px] h-4">{m.batches?.name} · {m.role}</Badge>)}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 justify-end sm:justify-start">
                   <Dialog open={isOpen} onOpenChange={(o) => setAssignOpen(o ? u.id : null)}>
-                    <DialogTrigger asChild><Button variant="outline" size="sm"><UserPlus className="h-4 w-4 mr-2" />Batches</Button></DialogTrigger>
-                    <DialogContent>
+                    <DialogTrigger asChild><Button variant="outline" size="sm" className="h-8 text-xs flex-1 sm:flex-none"><UserPlus className="h-3.5 w-3.5 mr-2" />Batches</Button></DialogTrigger>
+                    <DialogContent className="max-w-[95vw] sm:max-w-md">
                       <DialogHeader><DialogTitle>Assign {u.full_name || u.email} to batches</DialogTitle></DialogHeader>
-                      <div className="space-y-3 max-h-96 overflow-auto">
+                      <div className="space-y-3 max-h-[60vh] overflow-auto pr-1">
                         {batches.length === 0 && <p className="text-sm text-muted-foreground">No batches yet.</p>}
                         {batches.map(b => {
                           const m = userMemberships.find((x: any) => x.batch_id === b.id);
                           return (
-                            <div key={b.id} className="flex items-center justify-between p-3 rounded-lg border">
-                              <div className="font-medium">{b.name}</div>
-                              <div className="flex items-center gap-3">
+                            <div key={b.id} className="flex flex-col gap-2 p-3 rounded-lg border bg-muted/20">
+                              <div className="font-medium text-sm">{b.name}</div>
+                              <div className="flex items-center justify-between">
                                 <Select
                                   value={m?.role ?? "student"}
                                   onValueChange={async (newRole: any) => {
@@ -213,19 +288,22 @@ function UsersPage() {
                                   }}
                                   disabled={!m}
                                 >
-                                  <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
+                                  <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="student">Student</SelectItem>
                                     <SelectItem value="teacher">Teacher</SelectItem>
                                   </SelectContent>
                                 </Select>
-                                <Checkbox checked={!!m} onCheckedChange={(c) => assignToBatch(u.id, b.id, (m?.role as any) ?? "student", !!c)} />
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-xs text-muted-foreground">{m ? "Assigned" : "Not Assigned"}</Label>
+                                  <Checkbox checked={!!m} onCheckedChange={(c) => assignToBatch(u.id, b.id, (m?.role as any) ?? "student", !!c)} />
+                                </div>
                               </div>
                             </div>
                           );
                         })}
                       </div>
-                      <DialogFooter><Button onClick={() => setAssignOpen(null)}>Done</Button></DialogFooter>
+                      <DialogFooter><Button onClick={() => setAssignOpen(null)} className="w-full sm:w-auto">Done</Button></DialogFooter>
                     </DialogContent>
                   </Dialog>
 

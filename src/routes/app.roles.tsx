@@ -78,23 +78,25 @@ function RolesPage() {
             const userRoles = roles[u.id] || [];
             const available = ALL_ROLES.filter(r => !userRoles.includes(r));
             return (
-              <div key={u.id} className="p-4 flex items-center gap-4 flex-wrap">
-                <Avatar><AvatarFallback className="bg-gradient-primary text-primary-foreground">{(u.full_name || u.email || "U").slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
-                <div className="flex-1 min-w-[200px]">
-                  <div className="font-medium">{u.full_name || "—"}</div>
-                  <div className="text-sm text-muted-foreground">{u.email}</div>
+              <div key={u.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-4 flex-1">
+                  <Avatar><AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">{(u.full_name || u.email || "U").slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
+                  <div className="min-w-0">
+                    <div className="font-bold sm:font-medium truncate">{u.full_name || "—"}</div>
+                    <div className="text-xs text-muted-foreground truncate">{u.email}</div>
+                  </div>
                 </div>
-                <div className="flex gap-1 flex-wrap items-center">
+                <div className="flex gap-1 flex-wrap items-center justify-end sm:justify-start">
                   {userRoles.map(r => (
-                    <Badge key={r} variant="secondary" className="capitalize gap-1 pr-1">
+                    <Badge key={r} variant="secondary" className="capitalize gap-1 pr-1 text-[10px] h-5">
                       <Shield className="h-3 w-3" /> {r}
                       <button onClick={() => removeRole(u.id, r)} className="hover:bg-destructive/20 rounded-full p-0.5"><X className="h-3 w-3" /></button>
                     </Badge>
                   ))}
                   {available.length > 0 && (
                     <Select onValueChange={(v) => addRole(u.id, v)}>
-                      <SelectTrigger className="w-32 h-7 text-xs"><SelectValue placeholder="+ Add role" /></SelectTrigger>
-                      <SelectContent>{available.map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent>
+                      <SelectTrigger className="w-28 h-6 text-[10px]"><SelectValue placeholder="+ Role" /></SelectTrigger>
+                      <SelectContent>{available.map(r => <SelectItem key={r} value={r} className="capitalize text-xs">{r}</SelectItem>)}</SelectContent>
                     </Select>
                   )}
                 </div>
