@@ -10,9 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import {
   BookOpen, Users, Calendar, FileText, Video, MessageSquare,
-  GraduationCap, Presentation, TrendingUp, Clock, ArrowRight, CreditCard, Download
+  GraduationCap, Presentation, TrendingUp, Clock, ArrowRight
 } from "lucide-react";
-import { generateReceipt } from "@/lib/receipt";
 
 export const Route = createFileRoute("/app/")({ component: Dashboard });
 
@@ -233,7 +232,6 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
   const [upcoming, setUpcoming] = useState<any[]>([]);
   const [recentNotes, setRecentNotes] = useState<any[]>([]);
   const [recentVideos, setRecentVideos] = useState<any[]>([]);
-  const [invoice, setInvoice] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -247,11 +245,10 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
       const ids = batches.map((b: any) => b.id);
       
       const nowIso = new Date().toISOString();
-      const [up, n, v, inv, prof] = await Promise.all([
+      const [up, n, v, prof] = await Promise.all([
         ids.length ? supabase.from("live_classes").select("id, title, scheduled_at, duration_minutes, meeting_url, batch_id, batches(name)").in("batch_id", ids).gte("scheduled_at", nowIso).order("scheduled_at").limit(5) : Promise.resolve({ data: [] }),
         ids.length ? supabase.from("notes").select("id, title, batch_id, created_at, batches(name)").in("batch_id", ids).order("created_at", { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
         ids.length ? supabase.from("video_recordings").select("id, title, batch_id, created_at, batches(name)").in("batch_id", ids).order("created_at", { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
-        supabase.from("student_invoices").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("profiles").select("*").eq("id", userId).single(),
       ]);
 
@@ -260,7 +257,6 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
       setUpcoming(list.slice(1));
       setRecentNotes(n.data ?? []);
       setRecentVideos(v.data ?? []);
-      setInvoice(inv.data);
       setProfile(prof.data);
     })();
   }, [userId]);
@@ -272,91 +268,34 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
         description="Your learning hub — join live classes, review notes and watch recordings."
       />
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
-          {nextClass ? (
-            <Card className="p-0 overflow-hidden shadow-elegant h-full border-0">
-              <div className="bg-gradient-hero text-white p-8 relative h-full flex flex-col justify-center">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,oklch(0.85_0.18_310/.4),transparent_60%)]" />
-                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div>
-                    <Badge className="bg-white/25 text-white border-white/30 mb-2">Next live class</Badge>
-                    <h2 className="text-3xl font-bold">{nextClass.title}</h2>
-                    <div className="text-white/85 text-sm mt-1">{nextClass.batches?.name} · {new Date(nextClass.scheduled_at).toLocaleString()} · {nextClass.duration_minutes} min</div>
-                  </div>
-                  <a href={nextClass.meeting_url} target="_blank" rel="noreferrer">
-                    <Button size="lg" className="bg-white text-primary hover:bg-white/90 px-8 h-12 rounded-full font-bold shadow-lg"><Video className="h-5 w-5 mr-2" />Join class</Button>
-                  </a>
-                </div>
-              </div>
-            </Card>
-          ) : (
-            <Card className="p-8 h-full shadow-card flex items-center gap-6 border-dashed border-2 bg-muted/20">
-              <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
-                <Calendar className="h-8 w-8 text-muted-foreground/50" />
-              </div>
-              <div>
-                <div className="text-xl font-semibold">No upcoming live classes</div>
-                <div className="text-muted-foreground">Check back later or browse your batches below.</div>
-              </div>
-            </Card>
-          )}
-        </div>
-
-        <Card className="p-6 shadow-elegant bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <TrendingUp className="w-24 h-24" />
-          </div>
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><CreditCard className="h-5 w-5 text-blue-400" /> Fee Details</h2>
-          {!invoice ? (
-             <div className="space-y-2 opacity-60">
-                <p className="text-sm">No invoice generated yet.</p>
-                <div className="h-2 bg-white/10 rounded w-full" />
-                <div className="h-2 bg-white/10 rounded w-2/3" />
-             </div>
-          ) : (
-            <div className="space-y-4 relative z-10">
-              <div>
-                <div className="text-xs text-white/60 uppercase tracking-wider font-semibold">Pending Amount</div>
-                <div className="text-3xl font-bold text-rose-400">₹{(Number(invoice.total_fee) - Number(invoice.paid_amount)).toLocaleString()}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/10">
+      <div className="mb-6">
+        {nextClass ? (
+          <Card className="p-0 overflow-hidden shadow-elegant border-0">
+            <div className="bg-gradient-hero text-white p-8 relative flex flex-col justify-center">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,oklch(0.85_0.18_310/.4),transparent_60%)]" />
+              <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                  <div className="text-[10px] text-white/50 uppercase">Total Fee</div>
-                  <div className="text-sm font-medium">₹{Number(invoice.total_fee).toLocaleString()}</div>
+                  <Badge className="bg-white/25 text-white border-white/30 mb-2">Next live class</Badge>
+                  <h2 className="text-3xl font-bold">{nextClass.title}</h2>
+                  <div className="text-white/85 text-sm mt-1">{nextClass.batches?.name} · {new Date(nextClass.scheduled_at).toLocaleString()} · {nextClass.duration_minutes} min</div>
                 </div>
-                <div>
-                  <div className="text-[10px] text-white/50 uppercase">Paid</div>
-                  <div className="text-sm font-medium text-emerald-400">₹{Number(invoice.paid_amount).toLocaleString()}</div>
-                </div>
+                <a href={nextClass.meeting_url} target="_blank" rel="noreferrer">
+                  <Button size="lg" className="bg-white text-primary hover:bg-white/90 px-8 h-12 rounded-full font-bold shadow-lg"><Video className="h-5 w-5 mr-2" />Join class</Button>
+                </a>
               </div>
-              <Badge className={cn(
-                "w-full justify-center py-1 mt-2 mb-3",
-                invoice.status === "fully_paid" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"
-              )}>
-                {invoice.status.replace("_", " ")}
-              </Badge>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white"
-                onClick={() => generateReceipt({
-                  studentName: profile?.full_name || email.split("@")[0],
-                  studentEmail: email,
-                  totalFee: Number(invoice.total_fee),
-                  paidAmount: Number(invoice.paid_amount),
-                  paymentDate: new Date().toLocaleDateString(),
-                  status: invoice.status,
-                  paymentMethod: invoice.payment_method,
-                  paymentDetails: invoice.payment_method === "bajaj" ? invoice.bajaj_lan_no : invoice.payment_method === "self" ? invoice.self_payment_type : invoice.merchant_payment_type
-                })}
-              >
-                <Download className="h-4 w-4 mr-2" /> Download Receipt
-              </Button>
             </div>
-          )}
-        </Card>
+          </Card>
+        ) : (
+          <Card className="p-8 shadow-card flex items-center gap-6 border-dashed border-2 bg-muted/20">
+            <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+              <Calendar className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <div>
+              <div className="text-xl font-semibold">No upcoming live classes</div>
+              <div className="text-muted-foreground">Check back later or browse your batches below.</div>
+            </div>
+          </Card>
+        )}
       </div>
 
       {profile && (
