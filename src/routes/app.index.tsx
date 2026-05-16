@@ -344,7 +344,6 @@ function StudentDashboard({ email, userId }: { email: string; userId: string }) 
               <div className="space-y-3">
                 <ProfileItem label="Education" value={profile.education_details} />
                 <ProfileItem label="Designation" value={profile.designation} />
-                <ProfileItem label="Experience" value={profile.experience_type?.replace("_", " ")} className="capitalize" />
                 <ProfileItem label="Current PKG" value={profile.current_package} />
               </div>
             </div>

@@ -17,7 +17,7 @@ export const Route = createFileRoute("/app/profile")({
 });
 
 function ProfilePage() {
-  const { user } = useAuth();
+  const { user, hasRole, isAdmin } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -220,20 +220,22 @@ function ProfilePage() {
                   <Label htmlFor="designation">Designation</Label>
                   <Input id="designation" name="designation" defaultValue={profile?.designation} placeholder="Current Job Title" />
                 </div>
-                <div className="space-y-2">
-                  <Label>Candidate Type</Label>
-                  <Select 
-                    defaultValue={profile?.experience_type || "fresher"}
-                    onValueChange={(v) => setProfile({ ...profile, experience_type: v })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fresher">Fresher</SelectItem>
-                      <SelectItem value="experienced">Experienced</SelectItem>
-                      <SelectItem value="buy_experience">Buy Experience</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {(!hasRole("student") || isAdmin) && (
+                  <div className="space-y-2">
+                    <Label>Candidate Type</Label>
+                    <Select 
+                      defaultValue={profile?.experience_type || "fresher"}
+                      onValueChange={(v) => setProfile({ ...profile, experience_type: v })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fresher">Fresher</SelectItem>
+                        <SelectItem value="experienced">Experienced</SelectItem>
+                        <SelectItem value="buy_experience">Buy Experience</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="current_package">Current Package</Label>
                   <Input id="current_package" name="current_package" defaultValue={profile?.current_package} placeholder="e.g. 5 LPA" />
