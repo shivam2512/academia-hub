@@ -360,11 +360,17 @@ function InvoicesPage() {
               {paymentMethod === "merchant" && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                   <Label>Merchant Details</Label>
-                  <Input 
-                    value={merchantPaymentType} 
-                    onChange={e => setMerchantPaymentType(e.target.value)} 
-                    placeholder="e.g. Credit Card, NEFT, RTGS" 
-                  />
+                  <Select value={merchantPaymentType} onValueChange={setMerchantPaymentType}>
+                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="debit_card">Debit Card</SelectItem>
+                      <SelectItem value="netbanking">Netbanking</SelectItem>
+                      <SelectItem value="neft">NEFT</SelectItem>
+                      <SelectItem value="rtgs">RTGS</SelectItem>
+                      <SelectItem value="upi_merchant">UPI (Merchant)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>
