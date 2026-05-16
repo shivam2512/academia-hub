@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Users, UserPlus, Lock, Plus, Trash2, Search, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { createUser, deleteUser, updateUser } from "@/actions/users";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/users")({ component: UsersPage });
 
@@ -29,17 +30,19 @@ function UsersPage() {
   const [eligibleForPP, setEligibleForPP] = useState(false);
   const [batches, setBatches] = useState<any[]>([]);
   const [memberships, setMemberships] = useState<Record<string, any[]>>({});
+  const [invoices, setInvoices] = useState<Record<string, any>>({});
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [updating, setUpdating] = useState(false);
 
   const load = async () => {
-    const [u, r, b, m] = await Promise.all([
+    const [u, r, b, m, i] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("batches").select("id, name"),
       supabase.from("batch_members").select("user_id, batch_id, role, batches(name)"),
+      supabase.from("student_invoices").select("user_id, status"),
     ]);
     setUsers(u.data ?? []);
     const rmap: Record<string, string[]> = {};
@@ -49,6 +52,9 @@ function UsersPage() {
     const mmap: Record<string, any[]> = {};
     (m.data ?? []).forEach((x: any) => { (mmap[x.user_id] ||= []).push(x); });
     setMemberships(mmap);
+    const imap: Record<string, any> = {};
+    (i.data ?? []).forEach(x => { imap[x.user_id] = x; });
+    setInvoices(imap);
   };
   useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
 
@@ -390,6 +396,16 @@ function UsersPage() {
                     <div className="flex gap-1 mt-1 flex-wrap">
                       {userRoles.map(r => <Badge key={r} variant="secondary" className="capitalize text-[10px] h-4">{r}</Badge>)}
                       {userMemberships.map((m: any) => <Badge key={m.batch_id} variant="outline" className="text-[10px] h-4">{m.batches?.name} · {m.role}</Badge>)}
+                      {userRoles.includes("student") && (
+                        <Badge className={cn(
+                          "text-[10px] h-4 border-transparent",
+                          invoices[u.id]?.status === "fully_paid" ? "bg-emerald-500 hover:bg-emerald-600" :
+                          invoices[u.id]?.status === "partially_paid" ? "bg-amber-500 hover:bg-amber-600" :
+                          "bg-slate-500 hover:bg-slate-600"
+                        )}>
+                          {invoices[u.id]?.status?.replace("_", " ") ?? "Unpaid"}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
