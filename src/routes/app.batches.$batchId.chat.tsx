@@ -21,6 +21,30 @@ type Msg = {
   created_at: string; edited_at: string | null;
 };
 
+const renderContent = (content: string, mine: boolean) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = content.split(urlRegex);
+  return parts.map((part, i) => {
+    if (part.match(/^https?:\/\//)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "underline break-all hover:opacity-80 font-medium",
+            mine ? "text-white" : "text-blue-600 dark:text-blue-400"
+          )}
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 function ChatPage() {
   const { batchId } = useParams({ from: "/app/batches/$batchId/chat" });
   const { user, isAdmin } = useAuth();
@@ -201,7 +225,7 @@ function ChatPage() {
                       <a href={mediaUrls[m.media_url]} target="_blank" rel="noreferrer" className="flex items-center gap-2 underline text-xs sm:text-sm mb-1"><Paperclip className="h-3 w-3" />Download attachment</a>
                     )
                   )}
-                  {m.content && <div className="whitespace-pre-wrap break-words text-xs sm:text-sm">{m.content}</div>}
+                  {m.content && <div className="whitespace-pre-wrap break-words text-xs sm:text-sm">{renderContent(m.content, mine)}</div>}
                 </div>
                 {Object.keys(rxGroups).length > 0 && (
                   <div className="flex gap-1 mt-1 flex-wrap">
