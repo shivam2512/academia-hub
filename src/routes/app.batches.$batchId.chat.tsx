@@ -288,8 +288,10 @@ function ChatPage() {
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
+                if (window.innerWidth >= 768) {
+                  e.preventDefault();
+                  send();
+                }
               }
             }}
             placeholder="Type a message… (Shift+Enter for new line)"
