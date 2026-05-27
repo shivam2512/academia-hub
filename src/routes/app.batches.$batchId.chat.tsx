@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Send, Paperclip, X, SmilePlus, Reply, Trash2, MessageSquare } from "lucide-react";
@@ -35,6 +35,7 @@ function ChatPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Initial load
   useEffect(() => {
@@ -130,6 +131,7 @@ function ChatPage() {
     if (error) { toast.error(error.message); return; }
     setText(""); setFile(null); setReplyTo(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (textareaRef.current) { textareaRef.current.style.height = "auto"; }
   };
 
   const toggleReaction = async (messageId: string, emoji: string) => {
@@ -252,9 +254,25 @@ function ChatPage() {
         <div className="flex gap-2 items-end">
           <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
           <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()}><Paperclip className="h-4 w-4" /></Button>
-          <Input value={text} onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Type a message…" className="flex-1" />
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              e.target.style.height = "auto";
+              e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            placeholder="Type a message… (Shift+Enter for new line)"
+            rows={1}
+            className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 overflow-y-auto leading-5"
+            style={{ minHeight: "2.25rem", maxHeight: "160px" }}
+          />
           <Button onClick={send} disabled={sending || (!text.trim() && !file)} className="bg-gradient-primary text-primary-foreground hover:opacity-90"><Send className="h-4 w-4" /></Button>
         </div>
       </div>
