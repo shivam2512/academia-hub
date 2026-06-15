@@ -29,7 +29,16 @@ export function useUnreadCounts() {
     };
     window.addEventListener("storage", handleStorage);
 
-    const ch = supabase.channel("global-chat-unreads")
+    const handleLocalSync = () => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem("chat_unread_counts") || "{}");
+        if (parsed && typeof parsed === "object") setUnreadCounts(parsed);
+      } catch {}
+    };
+    window.addEventListener("local-storage-sync", handleLocalSync);
+
+    const chId = Math.random().toString(36).substring(7);
+    const ch = supabase.channel(`global-chat-unreads-${chId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" },
         (payload) => {
           const msg = payload.new as any;
@@ -37,7 +46,10 @@ export function useUnreadCounts() {
             setUnreadCounts(prev => {
               const batchId = msg.batch_id;
               const next = { ...prev, [batchId]: (prev[batchId] || 0) + 1 };
-              try { localStorage.setItem("chat_unread_counts", JSON.stringify(next)); } catch {}
+              try { 
+                localStorage.setItem("chat_unread_counts", JSON.stringify(next)); 
+                window.dispatchEvent(new Event("local-storage-sync"));
+              } catch {}
               return next;
             });
           }
@@ -47,6 +59,7 @@ export function useUnreadCounts() {
 
     return () => {
       window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("local-storage-sync", handleLocalSync);
       supabase.removeChannel(ch);
     };
   }, [user]);
@@ -56,7 +69,10 @@ export function useUnreadCounts() {
       if (!prev[batchId]) return prev;
       const next = { ...prev };
       delete next[batchId];
-      try { localStorage.setItem("chat_unread_counts", JSON.stringify(next)); } catch {}
+      try { 
+        localStorage.setItem("chat_unread_counts", JSON.stringify(next)); 
+        window.dispatchEvent(new Event("local-storage-sync"));
+      } catch {}
       return next;
     });
   };
