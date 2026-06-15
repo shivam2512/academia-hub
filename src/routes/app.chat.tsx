@@ -630,6 +630,7 @@ function WhatsAppChat() {
           map[b.id] = msgs?.[0] ?? null;
         }));
         setLastMessages(map);
+      }
     })();
   }, []);
 
