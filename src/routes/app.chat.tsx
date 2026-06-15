@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader } from "@/components/ui/dialog";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 
 export const Route = createFileRoute("/app/chat")({ component: WhatsAppChat });
 
@@ -75,6 +76,7 @@ function renderContent(content: string, mine: boolean) {
 /* ─────────────────────────────────────────── */
 function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
   const { user, isAdmin } = useAuth();
+  const { clearUnread } = useUnreadCounts();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
   const [reactions, setReactions] = useState<Record<string, any[]>>({});
@@ -132,6 +134,8 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
           const m = payload.new as Msg;
           setMessages(prev => prev.find(x => x.id === m.id) ? prev : [...prev, m]);
           fetchProfiles([m.user_id]);
+          // If we receive a message while in this chat, clear unread right away
+          clearUnread(batchId);
         })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_messages", filter: `batch_id=eq.${batchId}` },
         (payload) => setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id)))
@@ -503,11 +507,12 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
 /* ─────────────────────────────────────────── */
 /*  GROUP LIST PANEL                          */
 /* ─────────────────────────────────────────── */
-function GroupList({ batches, lastMessages, selected, onSelect }: {
+function GroupList({ batches, lastMessages, selected, onSelect, unreadCounts }: {
   batches: Batch[];
   lastMessages: Record<string, Msg | null>;
   selected: string | null;
   onSelect: (b: Batch) => void;
+  unreadCounts: Record<string, number>;
 }) {
   const [search, setSearch] = useState("");
   const filtered = batches.filter(b =>
@@ -577,8 +582,15 @@ function GroupList({ batches, lastMessages, selected, onSelect }: {
                     </span>
                   )}
                 </div>
-                <div className="text-xs truncate text-sidebar-foreground/50">
-                  {last ? (last.content || "(media)") : (b.subject || "No messages yet")}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-xs truncate text-sidebar-foreground/50">
+                    {last ? (last.content || "(media)") : (b.subject || "No messages yet")}
+                  </div>
+                  {(unreadCounts[b.id] > 0) && (
+                    <span className="flex-shrink-0 flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shadow-sm">
+                      {unreadCounts[b.id]}
+                    </span>
+                  )}
                 </div>
               </div>
             </button>
@@ -597,6 +609,8 @@ function WhatsAppChat() {
   const [lastMessages, setLastMessages] = useState<Record<string, Msg | null>>({});
   const [selected, setSelected] = useState<Batch | null>(null);
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  
+  const { unreadCounts, clearUnread } = useUnreadCounts();
 
   useEffect(() => {
     (async () => {
@@ -618,6 +632,7 @@ function WhatsAppChat() {
   const handleSelect = (b: Batch) => {
     setSelected(b);
     setMobileView("chat");
+    clearUnread(b.id);
   };
 
   return (
@@ -634,6 +649,7 @@ function WhatsAppChat() {
           lastMessages={lastMessages}
           selected={selected?.id ?? null}
           onSelect={handleSelect}
+          unreadCounts={unreadCounts}
         />
       </div>
 

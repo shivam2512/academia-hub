@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles: ("superadmin"|"admin"|"teacher"|"student")[] };
 
@@ -30,7 +31,8 @@ export function AppLayout() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [hasUnread, setHasUnread] = useState(false);
+  
+  const { totalUnread } = useUnreadCounts();
 
   useEffect(() => {
     if (user) {
@@ -44,26 +46,6 @@ export function AppLayout() {
         });
     }
   }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const ch = supabase.channel("app-layout-chat-notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" },
-        (payload) => {
-          if (payload.new.user_id !== user.id && !location.pathname.startsWith("/app/chat")) {
-            setHasUnread(true);
-          }
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [user, location.pathname]);
-
-  useEffect(() => {
-    if (location.pathname.startsWith("/app/chat")) {
-      setHasUnread(false);
-    }
-  }, [location.pathname]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
@@ -106,8 +88,10 @@ export function AppLayout() {
               )}>
               <Icon className="h-4 w-4" /> 
               <span className="flex-1">{item.label}</span>
-              {item.to === "/app/chat" && hasUnread && (
-                <span className="h-2 w-2 rounded-full bg-destructive shadow-glow"></span>
+              {item.to === "/app/chat" && totalUnread > 0 && (
+                <span className="flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold shadow-glow shadow-destructive">
+                  {totalUnread}
+                </span>
               )}
             </Link>
           );
