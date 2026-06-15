@@ -85,6 +85,7 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState<string | null>(null);
+  const [activeMessage, setActiveMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -294,8 +295,10 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
                   <div className={cn("flex flex-col max-w-[72%] md:max-w-[58%]", mine ? "items-end" : "items-start")}>
                     <div className="relative">
                       {/* Bubble */}
-                      <div className={cn(
-                        "rounded-2xl px-3.5 py-2 shadow-sm relative",
+                      <div 
+                        onClick={() => setActiveMessage(prev => prev === m.id ? null : m.id)}
+                        className={cn(
+                        "rounded-2xl px-3.5 py-2 shadow-sm relative cursor-pointer md:cursor-default",
                         mine
                           ? "bg-gradient-primary text-primary-foreground rounded-tr-sm"
                           : "bg-card border border-border text-card-foreground rounded-tl-sm"
@@ -356,9 +359,10 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
                         </div>
                       </div>
 
-                      {/* Hover actions */}
+                      {/* Hover & Tap actions */}
                       <div className={cn(
-                        "absolute top-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10",
+                        "absolute top-1 flex items-center gap-0.5 transition-opacity z-10",
+                        activeMessage === m.id ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                         mine ? "right-full mr-1.5" : "left-full ml-1.5"
                       )}>
                         <Popover open={emojiOpen === m.id} onOpenChange={(o) => setEmojiOpen(o ? m.id : null)}>
