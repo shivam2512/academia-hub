@@ -30,6 +30,7 @@ export function AppLayout() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [hasUnread, setHasUnread] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -43,6 +44,26 @@ export function AppLayout() {
         });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase.channel("app-layout-chat-notifications")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" },
+        (payload) => {
+          if (payload.new.user_id !== user.id && !location.pathname.startsWith("/app/chat")) {
+            setHasUnread(true);
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, location.pathname]);
+
+  useEffect(() => {
+    if (location.pathname.startsWith("/app/chat")) {
+      setHasUnread(false);
+    }
+  }, [location.pathname]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
@@ -83,7 +104,11 @@ export function AppLayout() {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
                 active ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow" : "hover:bg-sidebar-accent text-sidebar-foreground/80"
               )}>
-              <Icon className="h-4 w-4" /> {item.label}
+              <Icon className="h-4 w-4" /> 
+              <span className="flex-1">{item.label}</span>
+              {item.to === "/app/chat" && hasUnread && (
+                <span className="h-2 w-2 rounded-full bg-destructive shadow-glow"></span>
+              )}
             </Link>
           );
         })}
