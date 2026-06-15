@@ -22,6 +22,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Netlify build artifacts (keep config but ignore build output)
+.netlify/functions-internal/
+.netlify/cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
