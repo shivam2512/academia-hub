@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { BookOpen, Users, FileText, Video, Calendar, MessageSquare } from "lucide-react";
+import { BookOpen, Users, FileText, Video, Calendar } from "lucide-react";
 
 export const Route = createFileRoute("/app/batches/$batchId/")({ component: BatchOverview });
 
@@ -68,13 +68,6 @@ function BatchOverview() {
         </Card>
       </div>
 
-      <Link to="/app/batches/$batchId/chat" params={{ batchId }}>
-        <Card className="p-6 shadow-card hover:shadow-elegant transition-all flex items-center gap-4">
-          <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow"><MessageSquare className="h-6 w-6 text-primary-foreground" /></div>
-          <div className="flex-1"><div className="font-semibold">Open batch chat</div><div className="text-sm text-muted-foreground">WhatsApp-style realtime chat for this batch</div></div>
-          <div className="text-primary font-medium">Open →</div>
-        </Card>
-      </Link>
     </div>
   );
 }
