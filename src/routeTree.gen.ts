@@ -15,6 +15,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppRolesRouteImport } from './routes/app.roles'
+import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppInvoicesRouteImport } from './routes/app.invoices'
+import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppBatchesIndexRouteImport } from './routes/app.batches.index'
 import { Route as AppBatchesBatchIdRouteImport } from './routes/app.batches.$batchId'
 import { Route as AppBatchesBatchIdIndexRouteImport } from './routes/app.batches.$batchId.index'
@@ -51,6 +54,21 @@ const AppUsersRoute = AppUsersRouteImport.update({
 const AppRolesRoute = AppRolesRouteImport.update({
   id: '/roles',
   path: '/roles',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInvoicesRoute = AppInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChatRoute = AppChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBatchesIndexRoute = AppBatchesIndexRouteImport.update({
@@ -93,6 +111,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/invoices': typeof AppInvoicesRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/roles': typeof AppRolesRoute
   '/app/users': typeof AppUsersRoute
   '/app/': typeof AppIndexRoute
@@ -107,6 +128,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/invoices': typeof AppInvoicesRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/roles': typeof AppRolesRoute
   '/app/users': typeof AppUsersRoute
   '/app': typeof AppIndexRoute
@@ -122,6 +146,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/invoices': typeof AppInvoicesRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/roles': typeof AppRolesRoute
   '/app/users': typeof AppUsersRoute
   '/app/': typeof AppIndexRoute
@@ -139,6 +166,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/app/chat'
+    | '/app/invoices'
+    | '/app/profile'
     | '/app/roles'
     | '/app/users'
     | '/app/'
@@ -153,6 +183,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/app/chat'
+    | '/app/invoices'
+    | '/app/profile'
     | '/app/roles'
     | '/app/users'
     | '/app'
@@ -167,6 +200,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/app/chat'
+    | '/app/invoices'
+    | '/app/profile'
     | '/app/roles'
     | '/app/users'
     | '/app/'
@@ -227,6 +263,27 @@ declare module '@tanstack/react-router' {
       path: '/roles'
       fullPath: '/app/roles'
       preLoaderRoute: typeof AppRolesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/invoices': {
+      id: '/app/invoices'
+      path: '/invoices'
+      fullPath: '/app/invoices'
+      preLoaderRoute: typeof AppInvoicesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/chat': {
+      id: '/app/chat'
+      path: '/chat'
+      fullPath: '/app/chat'
+      preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/batches/': {
@@ -301,6 +358,9 @@ const AppBatchesBatchIdRouteWithChildren =
   AppBatchesBatchIdRoute._addFileChildren(AppBatchesBatchIdRouteChildren)
 
 interface AppRouteChildren {
+  AppChatRoute: typeof AppChatRoute
+  AppInvoicesRoute: typeof AppInvoicesRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppRolesRoute: typeof AppRolesRoute
   AppUsersRoute: typeof AppUsersRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -309,6 +369,9 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppChatRoute: AppChatRoute,
+  AppInvoicesRoute: AppInvoicesRoute,
+  AppProfileRoute: AppProfileRoute,
   AppRolesRoute: AppRolesRoute,
   AppUsersRoute: AppUsersRoute,
   AppIndexRoute: AppIndexRoute,

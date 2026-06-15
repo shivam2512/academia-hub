@@ -17,6 +17,7 @@ type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles:
 const NAV: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, roles: ["superadmin","admin","teacher","student"] },
   { to: "/app/batches", label: "Batches", icon: BookOpen, roles: ["superadmin","admin","teacher","student"] },
+  { to: "/app/chat", label: "Chat", icon: MessageSquare, roles: ["superadmin","admin","teacher","student"] },
   { to: "/app/users", label: "Users", icon: Users, roles: ["superadmin","admin"] },
   { to: "/app/invoices", label: "Invoices", icon: FileText, roles: ["superadmin","admin"] },
   { to: "/app/roles", label: "Roles", icon: Shield, roles: ["superadmin"] },
