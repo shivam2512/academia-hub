@@ -150,7 +150,6 @@ export const BatchSubNav = ({ batchId }: { batchId: string }) => {
     { to: `/app/batches/${batchId}/notes`, label: "Notes", icon: FileText },
     { to: `/app/batches/${batchId}/videos`, label: "Recordings", icon: Video },
     { to: `/app/batches/${batchId}/live`, label: "Live Classes", icon: Calendar },
-    { to: `/app/batches/${batchId}/chat`, label: "Chat", icon: MessageSquare },
   ];
   return (
     <div className="border-b bg-card sticky top-0 z-10">

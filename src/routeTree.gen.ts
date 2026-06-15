@@ -24,7 +24,6 @@ import { Route as AppBatchesBatchIdIndexRouteImport } from './routes/app.batches
 import { Route as AppBatchesBatchIdVideosRouteImport } from './routes/app.batches.$batchId.videos'
 import { Route as AppBatchesBatchIdNotesRouteImport } from './routes/app.batches.$batchId.notes'
 import { Route as AppBatchesBatchIdLiveRouteImport } from './routes/app.batches.$batchId.live'
-import { Route as AppBatchesBatchIdChatRouteImport } from './routes/app.batches.$batchId.chat'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -101,11 +100,6 @@ const AppBatchesBatchIdLiveRoute = AppBatchesBatchIdLiveRouteImport.update({
   path: '/live',
   getParentRoute: () => AppBatchesBatchIdRoute,
 } as any)
-const AppBatchesBatchIdChatRoute = AppBatchesBatchIdChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => AppBatchesBatchIdRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -119,7 +113,6 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/batches/$batchId': typeof AppBatchesBatchIdRouteWithChildren
   '/app/batches/': typeof AppBatchesIndexRoute
-  '/app/batches/$batchId/chat': typeof AppBatchesBatchIdChatRoute
   '/app/batches/$batchId/live': typeof AppBatchesBatchIdLiveRoute
   '/app/batches/$batchId/notes': typeof AppBatchesBatchIdNotesRoute
   '/app/batches/$batchId/videos': typeof AppBatchesBatchIdVideosRoute
@@ -135,7 +128,6 @@ export interface FileRoutesByTo {
   '/app/users': typeof AppUsersRoute
   '/app': typeof AppIndexRoute
   '/app/batches': typeof AppBatchesIndexRoute
-  '/app/batches/$batchId/chat': typeof AppBatchesBatchIdChatRoute
   '/app/batches/$batchId/live': typeof AppBatchesBatchIdLiveRoute
   '/app/batches/$batchId/notes': typeof AppBatchesBatchIdNotesRoute
   '/app/batches/$batchId/videos': typeof AppBatchesBatchIdVideosRoute
@@ -154,7 +146,6 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/batches/$batchId': typeof AppBatchesBatchIdRouteWithChildren
   '/app/batches/': typeof AppBatchesIndexRoute
-  '/app/batches/$batchId/chat': typeof AppBatchesBatchIdChatRoute
   '/app/batches/$batchId/live': typeof AppBatchesBatchIdLiveRoute
   '/app/batches/$batchId/notes': typeof AppBatchesBatchIdNotesRoute
   '/app/batches/$batchId/videos': typeof AppBatchesBatchIdVideosRoute
@@ -174,7 +165,6 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/batches/$batchId'
     | '/app/batches/'
-    | '/app/batches/$batchId/chat'
     | '/app/batches/$batchId/live'
     | '/app/batches/$batchId/notes'
     | '/app/batches/$batchId/videos'
@@ -190,7 +180,6 @@ export interface FileRouteTypes {
     | '/app/users'
     | '/app'
     | '/app/batches'
-    | '/app/batches/$batchId/chat'
     | '/app/batches/$batchId/live'
     | '/app/batches/$batchId/notes'
     | '/app/batches/$batchId/videos'
@@ -208,7 +197,6 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/batches/$batchId'
     | '/app/batches/'
-    | '/app/batches/$batchId/chat'
     | '/app/batches/$batchId/live'
     | '/app/batches/$batchId/notes'
     | '/app/batches/$batchId/videos'
@@ -328,18 +316,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBatchesBatchIdLiveRouteImport
       parentRoute: typeof AppBatchesBatchIdRoute
     }
-    '/app/batches/$batchId/chat': {
-      id: '/app/batches/$batchId/chat'
-      path: '/chat'
-      fullPath: '/app/batches/$batchId/chat'
-      preLoaderRoute: typeof AppBatchesBatchIdChatRouteImport
-      parentRoute: typeof AppBatchesBatchIdRoute
-    }
   }
 }
 
 interface AppBatchesBatchIdRouteChildren {
-  AppBatchesBatchIdChatRoute: typeof AppBatchesBatchIdChatRoute
   AppBatchesBatchIdLiveRoute: typeof AppBatchesBatchIdLiveRoute
   AppBatchesBatchIdNotesRoute: typeof AppBatchesBatchIdNotesRoute
   AppBatchesBatchIdVideosRoute: typeof AppBatchesBatchIdVideosRoute
@@ -347,7 +327,6 @@ interface AppBatchesBatchIdRouteChildren {
 }
 
 const AppBatchesBatchIdRouteChildren: AppBatchesBatchIdRouteChildren = {
-  AppBatchesBatchIdChatRoute: AppBatchesBatchIdChatRoute,
   AppBatchesBatchIdLiveRoute: AppBatchesBatchIdLiveRoute,
   AppBatchesBatchIdNotesRoute: AppBatchesBatchIdNotesRoute,
   AppBatchesBatchIdVideosRoute: AppBatchesBatchIdVideosRoute,
