@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Send, Paperclip, X, SmilePlus, Reply, Trash2,
-  MessageSquare, Search, ArrowLeft, Users
+  MessageSquare, Search, ArrowLeft, Users, GraduationCap
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -27,8 +27,6 @@ type Batch = {
   created_at: string; batch_members: { count: number }[];
 };
 
-const WA_BG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23e5ddd5'/%3E%3Ccircle cx='10' cy='10' r='2' fill='%23d4c9bf' opacity='0.5'/%3E%3Ccircle cx='50' cy='10' r='2' fill='%23d4c9bf' opacity='0.5'/%3E%3Ccircle cx='30' cy='30' r='2' fill='%23d4c9bf' opacity='0.5'/%3E%3Ccircle cx='70' cy='30' r='2' fill='%23d4c9bf' opacity='0.5'/%3E%3Ccircle cx='10' cy='50' r='2' fill='%23d4c9bf' opacity='0.5'/%3E%3Ccircle cx='50' cy='50' r='2' fill='%23d4c9bf' opacity='0.5'/%3E%3Ccircle cx='30' cy='70' r='2' fill='%23d4c9bf' opacity='0.5'/%3E%3Ccircle cx='70' cy='70' r='2' fill='%23d4c9bf' opacity='0.5'/%3E%3C/svg%3E`;
-
 function formatTime(dt: string) {
   return new Date(dt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
@@ -47,14 +45,13 @@ function getInitials(name: string) {
   return name.trim().split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 }
 
-const AVATAR_COLORS = [
-  "#d97706", "#dc2626", "#7c3aed", "#0891b2", "#059669",
-  "#db2777", "#2563eb", "#65a30d", "#9333ea", "#f59e0b"
-];
-function avatarColor(id: string) {
+// Deterministic color from the app's accent palette
+const ACCENT_HUE = ["275", "295", "260", "285", "270", "280", "265", "290"];
+function avatarBg(id: string) {
   let n = 0;
   for (let i = 0; i < id.length; i++) n += id.charCodeAt(i);
-  return AVATAR_COLORS[n % AVATAR_COLORS.length];
+  const hue = ACCENT_HUE[n % ACCENT_HUE.length];
+  return `oklch(0.55 0.22 ${hue})`;
 }
 
 function renderContent(content: string, mine: boolean) {
@@ -64,7 +61,7 @@ function renderContent(content: string, mine: boolean) {
     if (part.match(/^https?:\/\//)) {
       return (
         <a key={i} href={part} target="_blank" rel="noopener noreferrer"
-          className={cn("underline break-all font-medium", mine ? "text-[#dcf8c6]" : "text-blue-600")}>
+          className={cn("underline break-all font-medium", mine ? "text-white/80" : "text-primary")}>
           {part}
         </a>
       );
@@ -73,9 +70,9 @@ function renderContent(content: string, mine: boolean) {
   });
 }
 
-/* ────────────────────────────────────────────────────────── */
-/*  CHAT PANEL                                               */
-/* ────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────── */
+/*  CHAT PANEL                                */
+/* ─────────────────────────────────────────── */
 function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
   const { user, isAdmin } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -91,11 +88,10 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   const batchId = batch.id;
 
-  const fetchProfiles = useCallback(async (userIds: string[]) => {
-    const missing = userIds.filter(id => !profiles[id]);
+  const fetchProfiles = useCallback(async (ids: string[]) => {
+    const missing = ids.filter(id => !profiles[id]);
     if (!missing.length) return;
     const { data } = await supabase.from("profiles").select("id, full_name, email").in("id", missing);
     if (data) {
@@ -220,20 +216,20 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
   });
 
   return (
-    <div className="flex flex-col h-full" style={{ background: `url("${WA_BG}")` }}>
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 z-10"
-        style={{ background: "#075e54" }}>
-        <button onClick={onBack} className="md:hidden text-white/80 hover:text-white mr-1">
+    <div className="flex flex-col h-full bg-gradient-subtle">
+
+      {/* ── Header ── */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-sidebar-border bg-sidebar flex-shrink-0 z-10">
+        <button onClick={onBack} className="md:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground mr-1 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          style={{ background: avatarColor(batch.id) }}>
+        <div className="h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-glow"
+          style={{ background: avatarBg(batch.id) }}>
           {getInitials(batch.name)}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-white font-semibold text-sm truncate">{batch.name}</div>
-          <div className="text-[#b2dfdb] text-xs truncate flex items-center gap-1">
+          <div className="text-sidebar-foreground font-semibold text-sm truncate">{batch.name}</div>
+          <div className="text-sidebar-foreground/50 text-xs flex items-center gap-1">
             <Users className="h-3 w-3" />
             {batch.batch_members?.[0]?.count ?? 0} members
             {batch.subject && <span className="ml-1">· {batch.subject}</span>}
@@ -241,15 +237,15 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
         </div>
       </div>
 
-      {/* Messages */}
-      <div ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-1"
-        style={{ backgroundImage: `url("${WA_BG}")`, backgroundSize: "80px 80px" }}>
+      {/* ── Messages ── */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full">
-            <div className="bg-white/80 rounded-2xl p-8 text-center shadow-sm">
-              <MessageSquare className="h-12 w-12 mx-auto text-[#075e54] opacity-40 mb-3" />
-              <p className="text-[#667781] text-sm">No messages yet. Say hello! 👋</p>
+            <div className="bg-card rounded-2xl p-10 text-center shadow-card">
+              <div className="h-14 w-14 rounded-xl bg-gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow">
+                <MessageSquare className="h-7 w-7 text-primary-foreground" />
+              </div>
+              <p className="text-muted-foreground text-sm">No messages yet. Say hello! 👋</p>
             </div>
           </div>
         )}
@@ -257,8 +253,8 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
         {grouped.map(({ date, msgs }) => (
           <div key={date}>
             {/* Date divider */}
-            <div className="flex items-center justify-center my-3">
-              <span className="bg-[#e1f3fb] text-[#54656f] text-xs font-medium px-3 py-1 rounded-full shadow-sm">
+            <div className="flex items-center justify-center my-4">
+              <span className="bg-accent text-accent-foreground text-xs font-medium px-3 py-1 rounded-full shadow-sm">
                 {formatDay(msgs[0].created_at)}
               </span>
             </div>
@@ -266,7 +262,9 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
             {msgs.map((m, i) => {
               const mine = m.user_id === user?.id;
               const prev = msgs[i - 1];
-              const showSender = !mine && (!prev || prev.user_id !== m.user_id);
+              const isGroupedWithPrev = prev && prev.user_id === m.user_id &&
+                (new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60000);
+              const showSender = !mine && !isGroupedWithPrev;
               const author = profiles[m.user_id];
               const name = author?.full_name || author?.email || "User";
               const reply = m.reply_to ? messages.find(x => x.id === m.reply_to) : null;
@@ -275,127 +273,114 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
               const rxGroups = rxList.reduce<Record<string, number>>((acc, r) => {
                 acc[r.emoji] = (acc[r.emoji] || 0) + 1; return acc;
               }, {});
-              const isGroupedWithPrev = prev && prev.user_id === m.user_id &&
-                (new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60000);
 
               return (
                 <div key={m.id}
-                  className={cn("flex items-end gap-1 group", mine ? "justify-end" : "justify-start",
-                    isGroupedWithPrev ? "mt-0.5" : "mt-2")}>
+                  className={cn("flex items-end gap-2 group", mine ? "justify-end" : "justify-start",
+                    isGroupedWithPrev ? "mt-0.5" : "mt-3")}>
 
-                  {/* Sender avatar */}
+                  {/* Avatar for others */}
                   {!mine && (
-                    <div className="w-7 flex-shrink-0 mb-1">
-                      {!isGroupedWithPrev && (
-                        <div className="h-7 w-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
-                          style={{ background: avatarColor(m.user_id) }}>
+                    <div className="w-7 flex-shrink-0 self-end mb-1">
+                      {!isGroupedWithPrev ? (
+                        <div className="h-7 w-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
+                          style={{ background: avatarBg(m.user_id) }}>
                           {getInitials(name)}
                         </div>
-                      )}
+                      ) : <div className="w-7" />}
                     </div>
                   )}
 
-                  <div className={cn("flex flex-col max-w-[72%] md:max-w-[60%]", mine ? "items-end" : "items-start")}>
-                    {/* Bubble */}
+                  <div className={cn("flex flex-col max-w-[72%] md:max-w-[58%]", mine ? "items-end" : "items-start")}>
                     <div className="relative">
+                      {/* Bubble */}
                       <div className={cn(
-                        "rounded-lg px-3 py-1.5 shadow-sm text-sm relative",
-                        mine ? "rounded-tr-none" : "rounded-tl-none"
-                      )}
-                        style={{
-                          background: mine ? "#dcf8c6" : "#ffffff",
-                          color: "#111b21",
-                        }}>
-
-                        {/* Bubble tail */}
-                        {!isGroupedWithPrev && (
-                          <div className={cn(
-                            "absolute top-0 w-2 h-2 overflow-hidden",
-                            mine ? "-right-2" : "-left-2"
-                          )}>
-                            <div className={cn(
-                              "w-4 h-4 rotate-45 absolute top-0",
-                              mine ? "-left-2" : "-right-2"
-                            )}
-                              style={{ background: mine ? "#dcf8c6" : "#ffffff" }} />
-                          </div>
-                        )}
-
-                        {/* Sender name for groups */}
+                        "rounded-2xl px-3.5 py-2 shadow-sm relative",
+                        mine
+                          ? "bg-gradient-primary text-primary-foreground rounded-tr-sm"
+                          : "bg-card border border-border text-card-foreground rounded-tl-sm"
+                      )}>
+                        {/* Sender name */}
                         {showSender && (
-                          <div className="text-xs font-semibold mb-0.5"
-                            style={{ color: avatarColor(m.user_id) }}>
+                          <div className="text-xs font-semibold mb-1" style={{ color: avatarBg(m.user_id) }}>
                             {name}
                           </div>
                         )}
 
                         {/* Reply quote */}
                         {reply && (
-                          <div className="rounded mb-1.5 pl-2 pr-2 py-1 text-xs border-l-4 overflow-hidden"
-                            style={{ background: mine ? "#b7e4a0" : "#f0f2f5", borderColor: avatarColor(reply.user_id) }}>
-                            <div className="font-semibold truncate" style={{ color: avatarColor(reply.user_id) }}>
+                          <div className={cn(
+                            "rounded-lg mb-2 px-2.5 py-1.5 text-xs border-l-[3px] overflow-hidden",
+                            mine ? "bg-white/15 border-white/50" : "bg-muted border-primary"
+                          )}>
+                            <div className={cn("font-semibold truncate mb-0.5", mine ? "text-white/80" : "text-primary")}>
                               {replyAuthor?.full_name || replyAuthor?.email || "User"}
                             </div>
-                            <div className="text-[#667781] truncate">{reply.content || "(media)"}</div>
+                            <div className={cn("truncate", mine ? "text-white/60" : "text-muted-foreground")}>
+                              {reply.content || "(media)"}
+                            </div>
                           </div>
                         )}
 
                         {/* Media */}
                         {m.media_url && mediaUrls[m.media_url] && (
                           m.media_type?.startsWith("image/") ? (
-                            <div className="mb-1 rounded-md overflow-hidden cursor-pointer"
+                            <div className="mb-2 rounded-xl overflow-hidden cursor-pointer"
                               onClick={() => setSelectedImage(mediaUrls[m.media_url!])}>
                               <img src={mediaUrls[m.media_url]} alt="attachment"
-                                className="max-w-full max-h-60 object-cover rounded-md hover:opacity-95 transition-opacity block" />
+                                className="max-w-full max-h-64 object-cover hover:opacity-90 transition-opacity block" />
                             </div>
                           ) : (
                             <a href={mediaUrls[m.media_url]} target="_blank" rel="noreferrer"
-                              className="flex items-center gap-2 text-[#007bfc] text-xs mb-1 font-medium">
+                              className={cn("flex items-center gap-2 text-xs mb-2 font-medium underline", mine ? "text-white/80" : "text-primary")}>
                               <Paperclip className="h-3 w-3" /> Download attachment
                             </a>
                           )
                         )}
 
-                        {/* Text */}
+                        {/* Text + timestamp row */}
                         {m.content && (
-                          <div className="whitespace-pre-wrap break-words leading-[1.4] pr-12">
+                          <div className={cn("whitespace-pre-wrap break-words text-sm leading-relaxed pr-14",
+                            mine ? "text-primary-foreground" : "text-card-foreground")}>
                             {renderContent(m.content, mine)}
                           </div>
                         )}
 
-                        {/* Timestamp (inside bubble, bottom right) */}
-                        <div className={cn("text-[10px] float-right ml-3 -mb-0.5 mt-0.5", mine ? "text-[#667781]" : "text-[#667781]")}>
+                        {/* Timestamp inside bubble */}
+                        <div className={cn(
+                          "absolute bottom-1.5 right-2.5 text-[10px] flex items-center gap-0.5",
+                          mine ? "text-primary-foreground/50" : "text-muted-foreground"
+                        )}>
                           {formatTime(m.created_at)}
-                          {mine && <span className="ml-0.5 text-[#53bdeb]">✓✓</span>}
+                          {mine && <span className="text-primary-foreground/60">✓✓</span>}
                         </div>
                       </div>
 
-                      {/* Action buttons — hover */}
+                      {/* Hover actions */}
                       <div className={cn(
-                        "absolute top-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10",
-                        mine ? "right-full mr-1" : "left-full ml-1"
+                        "absolute top-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10",
+                        mine ? "right-full mr-1.5" : "left-full ml-1.5"
                       )}>
-                        {/* Emoji picker */}
                         <Popover open={emojiOpen === m.id} onOpenChange={(o) => setEmojiOpen(o ? m.id : null)}>
                           <PopoverTrigger asChild>
-                            <button className="h-7 w-7 rounded-full flex items-center justify-center bg-white/90 shadow hover:bg-white text-[#667781]">
+                            <button className="h-7 w-7 rounded-full flex items-center justify-center bg-card border border-border shadow-sm hover:bg-muted transition-colors text-muted-foreground">
                               <SmilePlus className="h-3.5 w-3.5" />
                             </button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-1 flex gap-0.5">
                             {EMOJIS.map(e => (
                               <button key={e} onClick={() => toggleReaction(m.id, e)}
-                                className="text-lg hover:bg-muted rounded p-1">{e}</button>
+                                className="text-lg hover:bg-muted rounded p-1 transition-colors">{e}</button>
                             ))}
                           </PopoverContent>
                         </Popover>
-                        <button className="h-7 w-7 rounded-full flex items-center justify-center bg-white/90 shadow hover:bg-white text-[#667781]"
-                          onClick={() => setReplyTo(m)}>
+                        <button onClick={() => setReplyTo(m)}
+                          className="h-7 w-7 rounded-full flex items-center justify-center bg-card border border-border shadow-sm hover:bg-muted transition-colors text-muted-foreground">
                           <Reply className="h-3.5 w-3.5" />
                         </button>
                         {(mine || isAdmin) && (
-                          <button className="h-7 w-7 rounded-full flex items-center justify-center bg-white/90 shadow hover:bg-white text-red-500"
-                            onClick={() => deleteMessage(m.id)}>
+                          <button onClick={() => deleteMessage(m.id)}
+                            className="h-7 w-7 rounded-full flex items-center justify-center bg-card border border-border shadow-sm hover:bg-destructive/10 transition-colors text-destructive">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -404,14 +389,14 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
 
                     {/* Reactions */}
                     {Object.keys(rxGroups).length > 0 && (
-                      <div className="flex gap-1 mt-0.5 flex-wrap">
+                      <div className="flex gap-1 mt-1 flex-wrap">
                         {Object.entries(rxGroups).map(([e, n]) => {
                           const reacted = rxList.some((r: any) => r.emoji === e && r.user_id === user?.id);
                           return (
                             <button key={e} onClick={() => toggleReaction(m.id, e)}
                               className={cn(
-                                "text-xs px-1.5 py-0.5 rounded-full border bg-white shadow-sm hover:bg-[#f0f2f5] transition-colors",
-                                reacted && "border-[#25d366] bg-[#e9fbe5]"
+                                "text-xs px-1.5 py-0.5 rounded-full border bg-card shadow-sm hover:bg-muted transition-colors",
+                                reacted && "border-primary bg-primary/10 text-primary"
                               )}>
                               {e} {n}
                             </button>
@@ -427,19 +412,18 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
         ))}
       </div>
 
-      {/* Input bar */}
-      <div className="px-3 py-2" style={{ background: "#f0f2f5" }}>
+      {/* ── Input bar ── */}
+      <div className="px-4 py-3 border-t border-border bg-card flex-shrink-0">
         {/* Reply preview */}
         {replyTo && (
-          <div className="flex items-center justify-between rounded-lg px-3 py-2 mb-2 text-sm border-l-4"
-            style={{ background: "#fff", borderColor: "#25d366" }}>
+          <div className="flex items-center justify-between rounded-xl px-3 py-2 mb-2 border-l-4 border-primary bg-accent">
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold" style={{ color: "#075e54" }}>
+              <div className="text-xs font-semibold text-primary">
                 Replying to {profiles[replyTo.user_id]?.full_name || profiles[replyTo.user_id]?.email}
               </div>
-              <div className="truncate text-[#667781] text-xs">{replyTo.content || "(media)"}</div>
+              <div className="truncate text-muted-foreground text-xs mt-0.5">{replyTo.content || "(media)"}</div>
             </div>
-            <button onClick={() => setReplyTo(null)} className="text-[#667781] ml-2 hover:text-[#111b21]">
+            <button onClick={() => setReplyTo(null)} className="text-muted-foreground hover:text-foreground ml-2 transition-colors">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -447,12 +431,12 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
 
         {/* File preview */}
         {file && (
-          <div className="flex items-center justify-between rounded-lg px-3 py-2 mb-2 text-sm bg-white shadow-sm">
-            <div className="flex items-center gap-2 truncate text-[#111b21]">
-              <Paperclip className="h-4 w-4 text-[#667781]" /> {file.name}
+          <div className="flex items-center justify-between rounded-xl px-3 py-2 mb-2 bg-muted">
+            <div className="flex items-center gap-2 truncate text-foreground text-sm">
+              <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" /> {file.name}
             </div>
             <button onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-              className="text-[#667781] hover:text-red-500 ml-2">
+              className="text-muted-foreground hover:text-destructive ml-2 transition-colors">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -461,12 +445,13 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
         <div className="flex items-end gap-2">
           <input ref={fileInputRef} type="file" className="hidden"
             onChange={(e) => setFile(e.target.files?.[0] || null)} />
+
           <button onClick={() => fileInputRef.current?.click()}
-            className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 text-[#54656f] hover:bg-[#d9dde1] transition-colors">
-            <Paperclip className="h-5 w-5" />
+            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex-shrink-0">
+            <Paperclip className="h-4 w-4" />
           </button>
 
-          <div className="flex-1 bg-white rounded-3xl px-4 flex items-end py-2 shadow-sm">
+          <div className="flex-1 bg-background border border-input rounded-2xl px-4 py-2 flex items-end shadow-sm focus-within:ring-2 focus-within:ring-ring transition-shadow">
             <textarea
               ref={textareaRef}
               value={text}
@@ -480,31 +465,30 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
                   e.preventDefault(); send();
                 }
               }}
-              placeholder="Type a message"
+              placeholder="Type a message…"
               rows={1}
-              className="flex-1 resize-none outline-none text-sm text-[#111b21] placeholder:text-[#8696a0] bg-transparent leading-5 overflow-y-auto"
+              className="flex-1 resize-none outline-none text-sm text-foreground placeholder:text-muted-foreground bg-transparent leading-5 overflow-y-auto"
               style={{ minHeight: "24px", maxHeight: "120px" }}
             />
           </div>
 
           <button onClick={send} disabled={sending || (!text.trim() && !file)}
-            className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 text-white transition-all disabled:opacity-50"
-            style={{ background: "#25d366" }}>
-            <Send className="h-5 w-5" />
+            className="h-9 w-9 rounded-full flex items-center justify-center text-primary-foreground bg-gradient-primary shadow-glow hover:opacity-90 transition-opacity flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
+            <Send className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       {/* Lightbox */}
       <Dialog open={!!selectedImage} onOpenChange={(o) => !o && setSelectedImage(null)}>
-        <DialogContent className="max-w-5xl p-0 overflow-hidden bg-transparent border-0 shadow-none sm:rounded-none">
+        <DialogContent className="max-w-5xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
           <DialogHeader>
             <DialogTitle className="sr-only">Image Preview</DialogTitle>
             <DialogDescription className="sr-only">Full-size view of the chat attachment</DialogDescription>
           </DialogHeader>
-          <div className="relative flex items-center justify-center w-full max-h-[90vh]">
+          <div className="flex items-center justify-center w-full max-h-[90vh]">
             <img src={selectedImage || ""} alt="full size"
-              className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
+              className="max-w-full max-h-full object-contain shadow-2xl rounded-xl" />
           </div>
         </DialogContent>
       </Dialog>
@@ -512,9 +496,9 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
   );
 }
 
-/* ────────────────────────────────────────────────────────── */
-/*  GROUP LIST PANEL                                         */
-/* ────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────── */
+/*  GROUP LIST PANEL                          */
+/* ─────────────────────────────────────────── */
 function GroupList({ batches, lastMessages, selected, onSelect }: {
   batches: Batch[];
   lastMessages: Record<string, Msg | null>;
@@ -528,38 +512,40 @@ function GroupList({ batches, lastMessages, selected, onSelect }: {
   );
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "#111b21" }}>
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3" style={{ background: "#202c33" }}>
-        <div className="text-white font-semibold text-base">Chats</div>
-        <div className="flex items-center gap-1 text-[#aebac1]">
-          <MessageSquare className="h-5 w-5" />
+    <div className="flex flex-col h-full bg-sidebar">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-5 py-4 border-b border-sidebar-border flex-shrink-0">
+        <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow flex-shrink-0">
+          <GraduationCap className="h-4 w-4 text-primary-foreground" />
+        </div>
+        <div>
+          <div className="text-sidebar-foreground font-bold text-sm leading-tight">DBS IT</div>
+          <div className="text-sidebar-foreground/50 text-[10px]">Chat</div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="px-3 py-2" style={{ background: "#111b21" }}>
-        <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: "#202c33" }}>
-          <Search className="h-4 w-4 flex-shrink-0" style={{ color: "#aebac1" }} />
+      <div className="px-3 py-2.5 border-b border-sidebar-border flex-shrink-0">
+        <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-sidebar-accent/40">
+          <Search className="h-3.5 w-3.5 flex-shrink-0 text-sidebar-foreground/40" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search or start new chat"
-            className="flex-1 bg-transparent text-sm outline-none"
-            style={{ color: "#d1d7db", caretColor: "#00a884" }}
+            placeholder="Search groups…"
+            className="flex-1 bg-transparent text-xs outline-none text-sidebar-foreground placeholder:text-sidebar-foreground/40"
           />
           {search && (
-            <button onClick={() => setSearch("")} style={{ color: "#aebac1" }}>
-              <X className="h-4 w-4" />
+            <button onClick={() => setSearch("")} className="text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors">
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
       </div>
 
-      {/* List */}
+      {/* Group list */}
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-40 text-[#aebac1] text-sm">
+          <div className="flex flex-col items-center justify-center h-32 text-sidebar-foreground/40 text-xs">
             No groups found
           </div>
         )}
@@ -568,28 +554,26 @@ function GroupList({ batches, lastMessages, selected, onSelect }: {
           const isActive = selected === b.id;
           return (
             <button key={b.id} onClick={() => onSelect(b)}
-              className="w-full flex items-center gap-3 px-4 py-3 transition-colors text-left border-b"
-              style={{
-                background: isActive ? "#2a3942" : "transparent",
-                borderColor: "#2a3942"
-              }}
-              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#202c33"; }}
-              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-            >
-              <div className="h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center text-white text-base font-bold"
-                style={{ background: avatarColor(b.id) }}>
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 text-left border-b border-sidebar-border/50 transition-colors",
+                isActive ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"
+              )}>
+              <div className="h-11 w-11 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-bold shadow-sm"
+                style={{ background: avatarBg(b.id) }}>
                 {getInitials(b.name)}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold truncate" style={{ color: "#e9edef" }}>{b.name}</span>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className={cn("text-sm font-semibold truncate", isActive ? "text-sidebar-primary" : "text-sidebar-foreground")}>
+                    {b.name}
+                  </span>
                   {last && (
-                    <span className="text-xs flex-shrink-0 ml-2" style={{ color: "#aebac1" }}>
+                    <span className="text-[10px] flex-shrink-0 ml-2 text-sidebar-foreground/40">
                       {formatTime(last.created_at)}
                     </span>
                   )}
                 </div>
-                <div className="text-xs truncate mt-0.5" style={{ color: "#aebac1" }}>
+                <div className="text-xs truncate text-sidebar-foreground/50">
                   {last ? (last.content || "(media)") : (b.subject || "No messages yet")}
                 </div>
               </div>
@@ -601,9 +585,9 @@ function GroupList({ batches, lastMessages, selected, onSelect }: {
   );
 }
 
-/* ────────────────────────────────────────────────────────── */
-/*  MAIN PAGE                                                */
-/* ────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────── */
+/*  MAIN PAGE                                 */
+/* ─────────────────────────────────────────── */
 function WhatsAppChat() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [lastMessages, setLastMessages] = useState<Record<string, Msg | null>>({});
@@ -615,9 +599,7 @@ function WhatsAppChat() {
       const { data } = await supabase.from("batches")
         .select("*, batch_members(count)").order("created_at", { ascending: false });
       setBatches(data ?? []);
-
-      // Fetch last message for each batch
-      if (data && data.length) {
+      if (data?.length) {
         const map: Record<string, Msg | null> = {};
         await Promise.all(data.map(async (b: Batch) => {
           const { data: msgs } = await supabase.from("chat_messages").select("*")
@@ -635,43 +617,38 @@ function WhatsAppChat() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]" style={{ background: "#111b21" }}>
-      {/* Left panel — always visible on desktop, toggled on mobile */}
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+      {/* Left panel */}
       <div className={cn(
-        "flex-shrink-0 border-r",
-        "w-full md:w-[360px]",
-        "md:flex",
+        "flex-shrink-0 border-r border-sidebar-border",
+        "w-full md:w-[320px]",
         mobileView === "list" ? "flex" : "hidden md:flex",
-      )} style={{ borderColor: "#2a3942" }}>
-        <div className="w-full">
-          <GroupList
-            batches={batches}
-            lastMessages={lastMessages}
-            selected={selected?.id ?? null}
-            onSelect={handleSelect}
-          />
-        </div>
+        "flex-col"
+      )}>
+        <GroupList
+          batches={batches}
+          lastMessages={lastMessages}
+          selected={selected?.id ?? null}
+          onSelect={handleSelect}
+        />
       </div>
 
-      {/* Right panel — placeholder or chat */}
+      {/* Right panel */}
       <div className={cn(
-        "flex-1 flex flex-col overflow-hidden",
-        "md:flex",
+        "flex-1 flex-col overflow-hidden",
         mobileView === "chat" ? "flex" : "hidden md:flex",
       )}>
         {selected ? (
           <ChatPanel batch={selected} onBack={() => setMobileView("list")} />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center"
-            style={{ background: "#222e35" }}>
+          <div className="flex-1 flex flex-col items-center justify-center bg-gradient-subtle h-full">
             <div className="text-center">
-              <div className="h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6"
-                style={{ background: "#2a3942" }}>
-                <MessageSquare className="h-10 w-10" style={{ color: "#aebac1" }} />
+              <div className="h-20 w-20 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto mb-6 shadow-glow">
+                <MessageSquare className="h-10 w-10 text-primary-foreground" />
               </div>
-              <h2 className="text-2xl font-light mb-2" style={{ color: "#e9edef" }}>DBS IT Chat</h2>
-              <p className="text-sm" style={{ color: "#8696a0" }}>
-                Select a group from the left to start chatting
+              <h2 className="text-xl font-semibold mb-2 text-foreground">Select a group</h2>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                Choose a batch from the left panel to start chatting with your group
               </p>
             </div>
           </div>
