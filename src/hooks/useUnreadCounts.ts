@@ -7,37 +7,37 @@ type UnreadCounts = Record<string, number>;
 export function useUnreadCounts() {
   const { user } = useAuth();
   const [unreadCounts, setUnreadCounts] = useState<UnreadCounts>(() => {
+    if (typeof window === "undefined") return {};
     try {
-      return JSON.parse(localStorage.getItem("chat_unread_counts") || "{}");
+      const parsed = JSON.parse(localStorage.getItem("chat_unread_counts") || "{}");
+      return parsed && typeof parsed === "object" ? parsed : {};
     } catch {
       return {};
     }
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || typeof window === "undefined") return;
     
-    // Listen to storage events to sync across tabs
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "chat_unread_counts" && e.newValue) {
-        setUnreadCounts(JSON.parse(e.newValue));
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed && typeof parsed === "object") setUnreadCounts(parsed);
+        } catch {}
       }
     };
     window.addEventListener("storage", handleStorage);
 
-    // Subscribe to new messages
     const ch = supabase.channel("global-chat-unreads")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" },
         (payload) => {
           const msg = payload.new as any;
           if (msg.user_id !== user.id) {
             setUnreadCounts(prev => {
-              // If the user is currently looking at this batch's chat, don't increment
-              // (We'll check window.location to see if they are active on it)
-              // Actually, better to just increment and let the active component clear it.
               const batchId = msg.batch_id;
               const next = { ...prev, [batchId]: (prev[batchId] || 0) + 1 };
-              localStorage.setItem("chat_unread_counts", JSON.stringify(next));
+              try { localStorage.setItem("chat_unread_counts", JSON.stringify(next)); } catch {}
               return next;
             });
           }
@@ -56,12 +56,13 @@ export function useUnreadCounts() {
       if (!prev[batchId]) return prev;
       const next = { ...prev };
       delete next[batchId];
-      localStorage.setItem("chat_unread_counts", JSON.stringify(next));
+      try { localStorage.setItem("chat_unread_counts", JSON.stringify(next)); } catch {}
       return next;
     });
   };
 
-  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
+  const safeCounts = unreadCounts || {};
+  const totalUnread = Object.values(safeCounts).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
 
-  return { unreadCounts, totalUnread, clearUnread };
+  return { unreadCounts: safeCounts, totalUnread, clearUnread };
 }
