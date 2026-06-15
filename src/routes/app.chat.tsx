@@ -134,8 +134,6 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
           const m = payload.new as Msg;
           setMessages(prev => prev.find(x => x.id === m.id) ? prev : [...prev, m]);
           fetchProfiles([m.user_id]);
-          // If we receive a message while in this chat, clear unread right away
-          clearUnread(batchId);
         })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_messages", filter: `batch_id=eq.${batchId}` },
         (payload) => setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id)))
@@ -152,6 +150,13 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [batchId, fetchProfiles]);
+
+  // Keep unread count clear while actively looking at this batch
+  useEffect(() => {
+    if (messages.length >= 0) {
+      clearUnread(batchId);
+    }
+  }, [messages, batchId, clearUnread]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -625,8 +630,30 @@ function WhatsAppChat() {
           map[b.id] = msgs?.[0] ?? null;
         }));
         setLastMessages(map);
-      }
     })();
+  }, []);
+
+  // Listen globally for any new message to update the lastMessages preview in real-time
+  useEffect(() => {
+    const ch = supabase.channel("whatsapp-chat-global")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" },
+        (payload) => {
+          const m = payload.new as Msg;
+          // Update the last message for this batch
+          setLastMessages(prev => ({ ...prev, [m.batch_id]: m }));
+          // Move this batch to the top
+          setBatches(prev => {
+            const idx = prev.findIndex(b => b.id === m.batch_id);
+            if (idx <= 0) return prev; // already at top or not found
+            const next = [...prev];
+            const [b] = next.splice(idx, 1);
+            next.unshift(b);
+            return next;
+          });
+        })
+      .subscribe();
+
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
   const handleSelect = (b: Batch) => {

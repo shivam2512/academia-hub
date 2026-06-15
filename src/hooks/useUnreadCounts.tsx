@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -48,7 +48,7 @@ export function UnreadCountsProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  const clearUnread = (batchId: string) => {
+  const clearUnread = useCallback((batchId: string) => {
     setUnreadCounts(prev => {
       if (!prev[batchId]) return prev;
       const next = { ...prev };
@@ -56,7 +56,7 @@ export function UnreadCountsProvider({ children }: { children: ReactNode }) {
       try { localStorage.setItem("chat_unread_counts", JSON.stringify(next)); } catch {}
       return next;
     });
-  };
+  }, []);
 
   const safeCounts = unreadCounts || {};
   const totalUnread = Object.values(safeCounts).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
