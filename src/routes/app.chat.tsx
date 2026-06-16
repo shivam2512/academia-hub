@@ -56,19 +56,48 @@ function avatarBg(id: string) {
 }
 
 function renderContent(content: string, mine: boolean) {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = content.split(urlRegex);
-  return parts.map((part, i) => {
+  // Split on URLs first, then handle @mentions within text fragments
+  const parts = content.split(/(https?:\/\/[^\s]+)/g);
+  // Process each part for @mentions
+  const result: React.ReactNode[] = [];
+  parts.forEach((part, i) => {
     if (part.match(/^https?:\/\//)) {
-      return (
-        <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+      result.push(
+        <a key={`url-${i}`} href={part} target="_blank" rel="noopener noreferrer"
           className={cn("underline break-all font-medium", mine ? "text-white/80" : "text-primary")}>
           {part}
         </a>
       );
+    } else {
+      // Check for @mentions within this text fragment
+      const mentionParts = part.split(/(@\w[\w ]*)/g);
+      mentionParts.forEach((mp, j) => {
+        if (mp.match(/^@\w/)) {
+          result.push(
+            <span key={`mention-${i}-${j}`}
+              className={cn(
+                "inline-flex items-center rounded-full px-1.5 py-0 text-[0.8em] font-semibold",
+                mine
+                  ? "bg-white/20 text-white"
+                  : "bg-primary/15 text-primary"
+              )}>
+              {mp}
+            </span>
+          );
+        } else {
+          result.push(mp);
+        }
+      });
     }
-    return part;
   });
+  return result;
+}
+
+// Extract @mention query from textarea at cursor position
+function getMentionQuery(value: string, cursorPos: number): string | null {
+  const textBeforeCursor = value.slice(0, cursorPos);
+  const match = textBeforeCursor.match(/@([\w ]*)$/);
+  return match ? match[1] : null;
 }
 
 /* ─────────────────────────────────────────── */
@@ -88,6 +117,11 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState<string | null>(null);
   const [activeMessage, setActiveMessage] = useState<string | null>(null);
+  // Mention state
+  const [members, setMembers] = useState<{ id: string; full_name: string; email: string }[]>([]);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const mentionListRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -103,6 +137,23 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
       setProfiles(prev => ({ ...prev, ...map }));
     }
   }, [profiles]);
+
+  // Fetch batch members for mention picker
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("batch_members")
+        .select("profiles(id, full_name, email)")
+        .eq("batch_id", batchId);
+      if (data) {
+        const list = data
+          .map((row: any) => row.profiles)
+          .filter(Boolean)
+          .map((p: any) => ({ id: p.id, full_name: p.full_name || "", email: p.email || "" }));
+        setMembers(list);
+      }
+    })();
+  }, [batchId]);
 
   useEffect(() => {
     setMessages([]); setProfiles({}); setReactions({}); setMediaUrls({});
@@ -464,25 +515,138 @@ function ChatPanel({ batch, onBack }: { batch: Batch; onBack: () => void }) {
             <Paperclip className="h-4 w-4" />
           </button>
 
-          <div className="flex-1 bg-background border border-input rounded-2xl px-4 py-2 flex items-end shadow-sm focus-within:ring-2 focus-within:ring-ring transition-shadow">
-            <textarea
-              ref={textareaRef}
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
-                e.target.style.height = "auto";
-                e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && window.innerWidth >= 768) {
-                  e.preventDefault(); send();
-                }
-              }}
-              placeholder="Type a message…"
-              rows={1}
-              className="flex-1 resize-none outline-none text-sm text-foreground placeholder:text-muted-foreground bg-transparent leading-5 overflow-y-auto"
-              style={{ minHeight: "24px", maxHeight: "120px" }}
-            />
+          <div className="relative flex-1">
+            {/* @Mention picker */}
+            {mentionQuery !== null && (() => {
+              const filtered = members.filter(m =>
+                (m.full_name || m.email).toLowerCase().includes(mentionQuery.toLowerCase()) &&
+                m.id !== user?.id
+              );
+              if (!filtered.length) return null;
+              return (
+                <div
+                  ref={mentionListRef}
+                  className="absolute bottom-full mb-1 left-0 right-0 bg-popover border border-border rounded-xl shadow-lg overflow-hidden z-50"
+                >
+                  <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
+                    Members
+                  </div>
+                  <div className="max-h-40 overflow-y-auto">
+                    {filtered.map((m, idx) => (
+                      <button
+                        key={m.id}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          // Replace the @query in the textarea with the selected mention
+                          const ta = textareaRef.current;
+                          if (!ta) return;
+                          const cursor = ta.selectionStart ?? text.length;
+                          const before = text.slice(0, cursor).replace(/@[\w ]*$/, "");
+                          const after = text.slice(cursor);
+                          const name = m.full_name || m.email.split("@")[0];
+                          const newText = `${before}@${name} ${after}`;
+                          setText(newText);
+                          setMentionQuery(null);
+                          setTimeout(() => {
+                            ta.focus();
+                            const pos = before.length + name.length + 2;
+                            ta.setSelectionRange(pos, pos);
+                          }, 0);
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-accent transition-colors",
+                          idx === mentionIndex && "bg-accent"
+                        )}
+                      >
+                        <div
+                          className="h-7 w-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold"
+                          style={{ background: avatarBg(m.id) }}
+                        >
+                          {getInitials(m.full_name || m.email)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {m.full_name || m.email.split("@")[0]}
+                          </div>
+                          {m.full_name && (
+                            <div className="text-[10px] text-muted-foreground truncate">{m.email}</div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="bg-background border border-input rounded-2xl px-4 py-2 flex items-end shadow-sm focus-within:ring-2 focus-within:ring-ring transition-shadow">
+              <textarea
+                ref={textareaRef}
+                value={text}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setText(val);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                  // Detect @mention
+                  const cursor = e.target.selectionStart ?? val.length;
+                  const query = getMentionQuery(val, cursor);
+                  setMentionQuery(query);
+                  setMentionIndex(0);
+                }}
+                onKeyDown={(e) => {
+                  // Handle mention navigation
+                  if (mentionQuery !== null) {
+                    const filtered = members.filter(m =>
+                      (m.full_name || m.email).toLowerCase().includes(mentionQuery.toLowerCase()) &&
+                      m.id !== user?.id
+                    );
+                    if (filtered.length > 0) {
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setMentionIndex(i => (i + 1) % filtered.length);
+                        return;
+                      }
+                      if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setMentionIndex(i => (i - 1 + filtered.length) % filtered.length);
+                        return;
+                      }
+                      if (e.key === "Enter" || e.key === "Tab") {
+                        e.preventDefault();
+                        const m = filtered[mentionIndex];
+                        const ta = textareaRef.current;
+                        if (!ta || !m) return;
+                        const cursor = ta.selectionStart ?? text.length;
+                        const before = text.slice(0, cursor).replace(/@[\w ]*$/, "");
+                        const after = text.slice(cursor);
+                        const name = m.full_name || m.email.split("@")[0];
+                        const newText = `${before}@${name} ${after}`;
+                        setText(newText);
+                        setMentionQuery(null);
+                        setTimeout(() => {
+                          ta.focus();
+                          const pos = before.length + name.length + 2;
+                          ta.setSelectionRange(pos, pos);
+                        }, 0);
+                        return;
+                      }
+                      if (e.key === "Escape") {
+                        setMentionQuery(null);
+                        return;
+                      }
+                    }
+                  }
+                  if (e.key === "Enter" && !e.shiftKey && window.innerWidth >= 768) {
+                    e.preventDefault(); send();
+                  }
+                }}
+                placeholder="Type a message… (@ to mention)"
+                rows={1}
+                className="flex-1 resize-none outline-none text-sm text-foreground placeholder:text-muted-foreground bg-transparent leading-5 overflow-y-auto"
+                style={{ minHeight: "24px", maxHeight: "120px" }}
+              />
+            </div>
           </div>
 
           <button onClick={send} disabled={sending || (!text.trim() && !file)}
